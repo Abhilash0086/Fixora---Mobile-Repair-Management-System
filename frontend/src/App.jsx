@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { api } from './lib/api';
 import { Sidebar } from './components/Sidebar';
 import { ToastArea, Loading } from './components/Common';
 import Login from './pages/Login';
@@ -11,6 +12,8 @@ import ReadyJobCards from './pages/ReadyJobCards';
 import DeliveredJobCards from './pages/DeliveredJobCards';
 import Search from './pages/Search';
 import Users from './pages/Users';
+import Analytics from './pages/Analytics';
+import TrackJobCard from './pages/TrackJobCard';
 import './index.css';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -22,16 +25,29 @@ function ProtectedRoute({ children, adminOnly = false }) {
 }
 
 function AppShell() {
-  const { user } = useAuth();
-  const [theme, setTheme]         = useState(() => localStorage.getItem('theme') || 'dark');
+  const { user, updateUser } = useAuth();
+  const [theme, setTheme]         = useState(() => user?.theme || localStorage.getItem('theme') || 'dark');
   const [sidebarOpen, setSidebar] = useState(false);
+
+  // Sync theme when user loads (e.g. after token refresh)
+  useEffect(() => {
+    if (user?.theme) setTheme(user.theme);
+  }, [user?.theme]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme   = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  async function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    updateUser({ theme: next });
+    try {
+      await api.updateProfile({ theme: next });
+    } catch {
+      // non-critical — theme already applied locally
+    }
+  }
   const toggleSidebar = () => setSidebar(o => !o);
   const closeSidebar  = () => setSidebar(false);
 
@@ -60,6 +76,7 @@ function AppShell() {
           <Route path="/ready"     element={<ReadyJobCards />} />
           <Route path="/delivered" element={<DeliveredJobCards />} />
           <Route path="/search"    element={<Search />} />
+          <Route path="/analytics" element={<ProtectedRoute adminOnly><Analytics /></ProtectedRoute>} />
           <Route path="/users"     element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
           <Route path="*"          element={<Navigate to="/" replace />} />
         </Routes>
@@ -74,8 +91,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/*"     element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
+          <Route path="/login"      element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/track/:id"  element={<TrackJobCard />} />
+          <Route path="/*"          element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

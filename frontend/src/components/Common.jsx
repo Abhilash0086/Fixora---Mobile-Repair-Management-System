@@ -5,12 +5,13 @@ import { ClipboardList } from 'lucide-react';
 export function Badge({ status }) {
   const key = status.replace(/\s+/g, '-');
   const dots = {
-    'Pending': '#facc15',
-    'In Progress': '#60a5fa',
+    'Pending':            '#facc15',
+    'In Progress':        '#60a5fa',
     'Ready for Delivery': '#4ade80',
-    'Delivered': '#a78bfa',
-    'Returned': '#f87171',
-    'Delayed': '#fb923c',
+    'Delivered':          '#a78bfa',
+    'Returned':           '#f87171',
+    'Delayed':            '#fb923c',
+    'Cancelled':          '#9ca3af',
   };
   return (
     <span className={`badge badge-${key}`}>
@@ -63,7 +64,7 @@ export function toast(msg, type = 'success') {
 }
 
 // ─── Status Select ───────────────────────────────────────────
-export const STATUSES = ['Pending', 'In Progress', 'Ready for Delivery', 'Delivered', 'Returned', 'Delayed'];
+export const STATUSES = ['Pending', 'In Progress', 'Ready for Delivery', 'Delivered', 'Returned', 'Delayed', 'Cancelled'];
 
 export function StatusSelect({ value, onChange, ...props }) {
   return (
@@ -155,7 +156,35 @@ export function PhoneInput({ value = '', onChange, placeholder = 'Mobile number'
   );
 }
 
-// ─── Format helpers ──────────────────────────────────────────
+// ─── Confirm Modal ───────────────────────────────────────────
+export function ConfirmModal({ title, message, detail, confirmLabel = 'Confirm', confirmClass = 'btn-danger', onConfirm, onCancel, loading = false }) {
+  return (
+    <div className="modal-backdrop" onClick={onCancel}>
+      <div className="modal confirm-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-title">{title}</div>
+          <button className="modal-close" onClick={onCancel}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{ color: 'var(--text)', lineHeight: 1.6 }}>{message}</p>
+          {detail && (
+            <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-3)' }}>{detail}</p>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-ghost" onClick={onCancel} disabled={loading}>
+            Keep
+          </button>
+          <button className={`btn ${confirmClass}`} onClick={onConfirm} disabled={loading}>
+            {loading ? 'Please wait…' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Format helpers ───────────────────────────────────────────
 export function fmtDate(str) {
   if (!str) return '—';
   return new Date(str).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });

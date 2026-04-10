@@ -2,10 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-const jobCardsRouter = require('./routes/jobCards');
-const optionsRouter  = require('./routes/options');
-const authRouter     = require('./routes/auth');
-const usersRouter    = require('./routes/users');
+const jobCardsRouter  = require('./routes/jobCards');
+const optionsRouter   = require('./routes/options');
+const authRouter      = require('./routes/auth');
+const usersRouter     = require('./routes/users');
+const analyticsRouter = require('./routes/analytics');
+const publicRouter    = require('./routes/public');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -19,10 +21,12 @@ app.use(cors({
 app.use(express.json());
 
 // ── Routes ──────────────────────────────────────────────────
-app.use('/api/auth',      authRouter);
-app.use('/api/users',     usersRouter);
-app.use('/api/job-cards', jobCardsRouter);
-app.use('/api/options',   optionsRouter);
+app.use('/api/auth',       authRouter);
+app.use('/api/users',      usersRouter);
+app.use('/api/job-cards',  jobCardsRouter);
+app.use('/api/options',    optionsRouter);
+app.use('/api/analytics',  analyticsRouter);
+app.use('/api/public',     publicRouter);
 
 // ── Health check ────────────────────────────────────────────
 app.get('/health', (_, res) => res.json({ status: 'ok', app: 'Fixora API' }));

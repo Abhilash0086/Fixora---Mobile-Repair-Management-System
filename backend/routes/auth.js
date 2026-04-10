@@ -16,7 +16,7 @@ router.post('/login', async (req, res) => {
 
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('name, role')
+      .select('name, role, theme')
       .eq('id', data.user.id)
       .single();
 
@@ -25,8 +25,9 @@ router.post('/login', async (req, res) => {
       user: {
         id:    data.user.id,
         email: data.user.email,
-        name:  profile?.name || data.user.email,
-        role:  profile?.role || 'technician',
+        name:  profile?.name  || data.user.email,
+        role:  profile?.role  || 'technician',
+        theme: profile?.theme || 'dark',
       },
     });
   } catch (err) {
@@ -37,6 +38,28 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', authenticate, (req, res) => {
   res.json(req.user);
+});
+
+// PATCH /api/auth/profile
+router.patch('/profile', authenticate, async (req, res) => {
+  const allowed = ['theme'];
+  const updates = {};
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) updates[key] = req.body[key];
+  }
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'Nothing to update' });
+  }
+  try {
+    const { error } = await supabase
+      .from('user_profiles')
+      .update(updates)
+      .eq('id', req.user.id);
+    if (error) throw error;
+    res.json({ ...req.user, ...updates });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

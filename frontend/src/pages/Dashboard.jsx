@@ -7,7 +7,7 @@ import { ClipboardList } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const STATS = [
-  { key: 'total',             label: 'Total Jobs',          color: '#f0f0f2' },
+  { key: 'total',             label: 'Total Jobs',          color: '#f97316' },
   { key: 'pending',           label: 'Pending',             color: '#facc15' },
   { key: 'in_progress',       label: 'In Progress',         color: '#60a5fa' },
   { key: 'ready_for_delivery',label: 'Ready for Delivery',  color: '#4ade80' },

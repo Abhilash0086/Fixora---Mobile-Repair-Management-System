@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Link2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -66,6 +66,22 @@ function EditSection({ title, children }) {
       <div className="form-grid">{children}</div>
     </div>
   );
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    toast('Tracking link copied!');
+  } catch {
+    toast('Copy failed — link: ' + text, 'error');
+  }
+  document.body.removeChild(ta);
 }
 
 export function JobCardModal({ jobCardId, onClose, onUpdated }) {
@@ -172,7 +188,28 @@ export function JobCardModal({ jobCardId, onClose, onUpdated }) {
             <div className="modal-title">{card?.job_card_id || '...'}</div>
             {card && <div style={{ marginTop: 4 }}><Badge status={card.status} /></div>}
           </div>
-          <button className="modal-close" onClick={onClose}><X size={16} strokeWidth={2} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {card && (
+              <button
+                className="modal-share-btn"
+                title="Copy tracking link"
+                onClick={() => {
+                  const url = `${window.location.origin}/track/${card.job_card_id}`;
+                  if (navigator.clipboard?.writeText) {
+                    navigator.clipboard.writeText(url)
+                      .then(() => toast('Tracking link copied!'))
+                      .catch(() => fallbackCopy(url));
+                  } else {
+                    fallbackCopy(url);
+                  }
+                }}
+              >
+                <Link2 size={14} strokeWidth={2} />
+                Share
+              </button>
+            )}
+            <button className="modal-close" onClick={onClose}><X size={16} strokeWidth={2} /></button>
+          </div>
         </div>
 
         {/* ── Body ── */}

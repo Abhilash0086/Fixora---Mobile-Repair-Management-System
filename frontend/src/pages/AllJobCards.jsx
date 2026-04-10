@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { Badge, Loading, Empty, StatusSelect, fmtDate, fmtDateTime } from '../components/Common';
+import { Badge, Loading, Empty, StatusSelect, ConfirmModal, fmtDate, fmtDateTime, toast } from '../components/Common';
 import { JobCardModal } from '../components/JobCardModal';
-import { Search as SearchIcon } from 'lucide-react';
+import { Search as SearchIcon, Pencil, XCircle, Printer } from 'lucide-react';
+import { printJobCard } from '../lib/printJobCard';
 
 export default function AllJobCards() {
-  const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [cards,    setCards]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
   const [selected, setSelected] = useState(null);
-  const [filters, setFilters] = useState({ status: '', search: '', date: '' });
+  const [filters,  setFilters]  = useState({ status: '', search: '', date: '' });
+  const [cancelTarget, setCancelTarget] = useState(null); // job object pending cancel
+  const [cancelling,   setCancelling]   = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -30,6 +33,45 @@ export default function AllJobCards() {
   }, [load]);
 
   const setF = (k, v) => setFilters(f => ({ ...f, [k]: v }));
+
+  function handleCancel(e, job) {
+    e.stopPropagation();
+    setCancelTarget(job);
+  }
+
+  async function confirmCancel() {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    try {
+      await api.updateJobCard(cancelTarget.job_card_id, { status: 'Cancelled' });
+      toast(`${cancelTarget.job_card_id} cancelled`);
+      setCancelTarget(null);
+      load();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      setCancelling(false);
+    }
+  }
+
+  async function handlePrint(e, job) {
+    e.stopPropagation();
+    // Fetch full details (list view may be missing some fields)
+    try {
+      const full = await api.getJobCard(job.job_card_id);
+      printJobCard(full);
+    } catch {
+      printJobCard(job); // fallback to list data
+    }
+  }
+
+  function handleEdit(e, job) {
+    e.stopPropagation();
+    setSelected(job.job_card_id);
+  }
+
+  const isCancelDisabled = job =>
+    ['Delivered', 'Returned', 'Cancelled'].includes(job.status) || cancelling;
 
   return (
     <div className="page">
@@ -74,6 +116,7 @@ export default function AllJobCards() {
                 <th>ETA</th>
                 <th>Created</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -85,11 +128,44 @@ export default function AllJobCards() {
                     <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{j.customer_phone}</div>
                   </td>
                   <td>{j.phone_brand} {j.phone_model}</td>
-                  <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.reported_issue}</td>
+                  <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {j.reported_issue}
+                  </td>
                   <td>{j.technician || '—'}</td>
                   <td>{fmtDate(j.eta)}</td>
                   <td style={{ fontSize: 12, color: 'var(--text-3)' }}>{fmtDateTime(j.created_at)}</td>
                   <td><Badge status={j.status} /></td>
+                  <td>
+                    <div className="row-actions" onClick={e => e.stopPropagation()}>
+                      {/* Edit */}
+                      <button
+                        className="row-action-btn"
+                        title="Edit"
+                        onClick={e => handleEdit(e, j)}
+                      >
+                        <Pencil size={14} />
+                      </button>
+
+                      {/* Cancel */}
+                      <button
+                        className="row-action-btn row-action-cancel"
+                        title="Cancel job"
+                        disabled={isCancelDisabled(j) || cancelling === j.job_card_id}
+                        onClick={e => handleCancel(e, j)}
+                      >
+                        <XCircle size={14} />
+                      </button>
+
+                      {/* Print */}
+                      <button
+                        className="row-action-btn row-action-print"
+                        title="Print job card"
+                        onClick={e => handlePrint(e, j)}
+                      >
+                        <Printer size={14} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -102,6 +178,19 @@ export default function AllJobCards() {
           jobCardId={selected}
           onClose={() => setSelected(null)}
           onUpdated={load}
+        />
+      )}
+
+      {cancelTarget && (
+        <ConfirmModal
+          title="Cancel Job Card"
+          message={`Cancel job card ${cancelTarget.job_card_id} for ${cancelTarget.customer_name}?`}
+          detail={`${cancelTarget.phone_brand} ${cancelTarget.phone_model} — ${cancelTarget.reported_issue}`}
+          confirmLabel="Yes, Cancel Job"
+          confirmClass="btn-danger"
+          loading={cancelling}
+          onConfirm={confirmCancel}
+          onCancel={() => setCancelTarget(null)}
         />
       )}
     </div>

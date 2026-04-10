@@ -29,8 +29,9 @@ async function req(method, path, body) {
 
 export const api = {
   // Auth
-  login:    (email, password) => req('POST', '/auth/login', { email, password }),
-  me:       ()                => req('GET',  '/auth/me'),
+  login:         (email, password) => req('POST',  '/auth/login',   { email, password }),
+  me:            ()                => req('GET',   '/auth/me'),
+  updateProfile: (data)            => req('PATCH', '/auth/profile', data),
 
   // Users (admin)
   getUsers:   ()                          => req('GET',    '/users'),
@@ -56,4 +57,21 @@ export const api = {
   addBrand:   (name)         => req('POST', '/options/brands', { name }),
   getModels:  (brand)        => req('GET',  `/options/models?brand=${encodeURIComponent(brand)}`),
   addModel:   (brand, name)  => req('POST', '/options/models', { brand, name }),
+
+  // Public (no auth)
+  trackJobCard: (id) => fetch(`/api/public/track/${id}`).then(async r => {
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Not found');
+    return d;
+  }),
+
+  // Analytics (admin only)
+  getRevenue: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return req('GET', `/analytics/revenue${qs ? `?${qs}` : ''}`);
+  },
+  getTechnicianStats: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return req('GET', `/analytics/technicians${qs ? `?${qs}` : ''}`);
+  },
 };

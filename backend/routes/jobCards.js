@@ -188,7 +188,7 @@ router.post('/',
   body('technician').optional().trim(),
   body('eta').optional().isISO8601(),
   body('remarks').optional().trim(),
-  body('status').optional().isIn(['Pending', 'In Progress', 'Ready for Delivery', 'Delivered', 'Returned', 'Delayed']),
+  body('status').optional().isIn(['Pending', 'In Progress', 'Ready for Delivery', 'Delivered', 'Returned', 'Delayed', 'Cancelled']),
   async (req, res) => {
     if (handleValidation(req, res)) return;
     try {
@@ -253,7 +253,7 @@ router.post('/',
 // PATCH /api/job-cards/:id
 // ──────────────────────────────────────────────
 router.patch('/:id',
-  body('status').optional().isIn(['Pending', 'In Progress', 'Ready for Delivery', 'Delivered', 'Returned', 'Delayed']),
+  body('status').optional().isIn(['Pending', 'In Progress', 'Ready for Delivery', 'Delivered', 'Returned', 'Delayed', 'Cancelled']),
   body('technician').optional().trim(),
   body('eta').optional().isISO8601(),
   body('remarks').optional().trim(),
