@@ -40,6 +40,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Fixora API running on port ${PORT}`);
-});
+// Start server only when run directly (not imported as serverless function)
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Fixora API running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
