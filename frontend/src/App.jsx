@@ -21,7 +21,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="page"><Loading /></div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (adminOnly && user.role !== 'admin') return <Navigate to="/" replace />;
+  if (adminOnly && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -71,7 +71,7 @@ function AppShell() {
           <span className="mobile-brand">Fixora</span>
         </div>
         <Routes>
-          <Route path="/"          element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/new"       element={<ProtectedRoute adminOnly><NewJobCard /></ProtectedRoute>} />
           <Route path="/jobs"      element={<ProtectedRoute adminOnly><AllJobCards /></ProtectedRoute>} />
           <Route path="/ready"     element={<ReadyJobCards />} />
@@ -79,7 +79,7 @@ function AppShell() {
           <Route path="/search"    element={<Search />} />
           <Route path="/analytics" element={<ProtectedRoute adminOnly><Analytics /></ProtectedRoute>} />
           <Route path="/users"     element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
-          <Route path="*"          element={<Navigate to="/" replace />} />
+          <Route path="*"          element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
       <ToastArea />
@@ -105,6 +105,6 @@ export default function App() {
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="page"><Loading /></div>;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return children;
 }

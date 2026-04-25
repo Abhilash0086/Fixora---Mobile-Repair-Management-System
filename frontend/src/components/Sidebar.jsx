@@ -7,7 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 
 const ADMIN_NAV = [
-  { path: '/',          icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/new',       icon: FilePlus,        label: 'New Job Card' },
   { path: '/jobs',      icon: ClipboardList,   label: 'All Job Cards' },
   { path: '/ready',     icon: PackageCheck,    label: 'Ready for Delivery' },
@@ -18,7 +18,7 @@ const ADMIN_NAV = [
 ];
 
 const TECH_NAV = [
-  { path: '/',          icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/ready',     icon: PackageCheck,    label: 'Ready for Delivery' },
   { path: '/delivered', icon: CheckCircle,     label: 'Delivered' },
   { path: '/search',    icon: Search,          label: 'Search' },
