@@ -268,7 +268,7 @@ export default function Landing() {
           <p className="lp-cta-sub">Sign in and start managing repairs the right way.</p>
           <Link to="/login" className="lp-btn-primary lp-btn-lg">
             Get Started <ArrowRight size={16} strokeWidth={2.5} />
-          </a>
+          </Link>
         </div>
       </section>
 
