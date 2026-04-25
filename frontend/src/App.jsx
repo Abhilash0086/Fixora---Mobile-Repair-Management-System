@@ -14,6 +14,7 @@ import Search from './pages/Search';
 import Users from './pages/Users';
 import Analytics from './pages/Analytics';
 import TrackJobCard from './pages/TrackJobCard';
+import Landing from './pages/Landing';
 import './index.css';
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -91,6 +92,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/"           element={<Landing />} />
           <Route path="/login"      element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/track/:id"  element={<TrackJobCard />} />
           <Route path="/*"          element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
