@@ -12,7 +12,7 @@ const SALUTATIONS = ['Mr', 'Mrs', 'Ms', 'Dr', 'Other'];
 
 const FIELD_LABELS = {
   salutation: 'Salutation', customer_name: 'Customer Name',
-  customer_phone: 'Mobile No', alt_mobile_no: 'Alt Mobile No', address: 'Address',
+  customer_email: 'Email', customer_phone: 'Mobile No', alt_mobile_no: 'Alt Mobile No', address: 'Address',
   phone_brand: 'Brand', phone_model: 'Model', color: 'Color',
   pattern_password: 'Pattern/Password', imei_status: 'IMEI',
   power_status: 'Power', touch_status: 'Touch', display_status: 'Display',
@@ -110,6 +110,7 @@ export function JobCardModal({ jobCardId, onClose, onUpdated }) {
         // Customer
         salutation:        data.salutation        || '',
         customer_name:     data.customer_name     || '',
+        customer_email:    data.customer_email    || '',
         customer_phone:    data.customer_phone    || '',
         alt_mobile_no:     data.alt_mobile_no     || '',
         address:           data.address           || '',
@@ -237,6 +238,10 @@ export function JobCardModal({ jobCardId, onClose, onUpdated }) {
                 <div className="field">
                   <label>Alternative Mobile No</label>
                   <PhoneInput value={form.alt_mobile_no} onChange={v => set('alt_mobile_no', v)} placeholder="XXXXX XXXXX" />
+                </div>
+                <div className="field span2">
+                  <label>Email</label>
+                  <input type="email" value={form.customer_email} onChange={e => set('customer_email', e.target.value)} placeholder="customer@example.com" />
                 </div>
                 <div className="field span2">
                   <label>Address</label>
@@ -379,6 +384,7 @@ export function JobCardModal({ jobCardId, onClose, onUpdated }) {
                 <DI label="Customer Name" value={card.customer_name} />
                 <DI label="Mobile No" value={card.customer_phone} />
                 <DI label="Alternative Mobile" value={card.alt_mobile_no} />
+                <DI label="Email" value={card.customer_email} full />
                 <DI label="Address" value={card.address} full />
               </DetailSection>
 

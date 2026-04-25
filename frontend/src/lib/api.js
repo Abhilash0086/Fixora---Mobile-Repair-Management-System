@@ -65,6 +65,11 @@ export const api = {
     return d;
   }),
 
+  // Enquiries
+  getEnquiries:   (today) => req('GET',    `/enquiries${today ? '?today=true' : ''}`),
+  createEnquiry:  (data)  => req('POST',   '/enquiries', data),
+  deleteEnquiry:  (id)    => req('DELETE', `/enquiries/${id}`),
+
   // Analytics (admin only)
   getRevenue: (params = {}) => {
     const qs = new URLSearchParams(params).toString();

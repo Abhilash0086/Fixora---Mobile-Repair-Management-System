@@ -2,24 +2,36 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { Badge, Loading, Empty, StatusSelect, ConfirmModal, fmtDate, fmtDateTime, toast } from '../components/Common';
 import { JobCardModal } from '../components/JobCardModal';
-import { Search as SearchIcon, Pencil, XCircle, Printer } from 'lucide-react';
+import { Search as SearchIcon, Pencil, XCircle, Printer, SlidersHorizontal } from 'lucide-react';
 import { printJobCard } from '../lib/printJobCard';
 
+const EMPTY_FILTERS = { status: '', search: '', date: '', technician: '', brand: '' };
+
 export default function AllJobCards() {
-  const [cards,    setCards]    = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [selected, setSelected] = useState(null);
-  const [filters,  setFilters]  = useState({ status: '', search: '', date: '' });
-  const [cancelTarget, setCancelTarget] = useState(null); // job object pending cancel
+  const [cards,       setCards]       = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [selected,    setSelected]    = useState(null);
+  const [filters,     setFilters]     = useState(EMPTY_FILTERS);
+  const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling,   setCancelling]   = useState(false);
+  const [technicians, setTechnicians] = useState([]);
+  const [brands,      setBrands]      = useState([]);
+
+  // Load filter options once
+  useEffect(() => {
+    api.getUsers().then(users => setTechnicians(users.filter(u => u.role === 'technician'))).catch(() => {});
+    api.getBrands().then(setBrands).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (filters.status) params.status = filters.status;
-      if (filters.search) params.search = filters.search;
-      if (filters.date)   params.date   = filters.date;
+      if (filters.status)     params.status     = filters.status;
+      if (filters.search)     params.search     = filters.search;
+      if (filters.date)       params.date       = filters.date;
+      if (filters.technician) params.technician = filters.technician;
+      if (filters.brand)      params.brand      = filters.brand;
       const data = await api.listJobCards(params);
       setCards(data);
     } finally {
@@ -33,6 +45,7 @@ export default function AllJobCards() {
   }, [load]);
 
   const setF = (k, v) => setFilters(f => ({ ...f, [k]: v }));
+  const hasFilters = Object.values(filters).some(Boolean);
 
   function handleCancel(e, job) {
     e.stopPropagation();
@@ -80,27 +93,38 @@ export default function AllJobCards() {
         <div className="page-subtitle">{cards.length} record{cards.length !== 1 ? 's' : ''}</div>
       </div>
 
-      <div className="search-row">
-        <div className="search-input-wrap">
+      {/* ── Filter bar ── */}
+      <div className="filter-bar">
+        <div className="search-input-wrap filter-search">
           <span className="search-icon"><SearchIcon size={14} /></span>
           <input
-            placeholder="Search by ID, model, customer..."
+            placeholder="Search by ID, name, phone, model..."
             value={filters.search}
             onChange={e => setF('search', e.target.value)}
           />
         </div>
-        <StatusSelect value={filters.status} onChange={v => setF('status', v)} style={{ width: 180 }} />
-        <input
-          type="date"
-          value={filters.date}
-          onChange={e => setF('date', e.target.value)}
-          style={{ width: 160 }}
-        />
-        {(filters.search || filters.status || filters.date) && (
-          <button className="btn btn-ghost btn-sm" onClick={() => setFilters({ status: '', search: '', date: '' })}>
-            Clear
-          </button>
-        )}
+        <div className="filter-row">
+          <StatusSelect value={filters.status} onChange={v => setF('status', v)} />
+          <select value={filters.brand} onChange={e => setF('brand', e.target.value)}>
+            <option value="">All Brands</option>
+            {brands.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+          <select value={filters.technician} onChange={e => setF('technician', e.target.value)}>
+            <option value="">All Technicians</option>
+            {technicians.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+          </select>
+          <input
+            type="date"
+            value={filters.date}
+            onChange={e => setF('date', e.target.value)}
+            title="Filter by created date"
+          />
+          {hasFilters && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setFilters(EMPTY_FILTERS)}>
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="table-wrap">

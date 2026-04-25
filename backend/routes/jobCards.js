@@ -2,6 +2,7 @@ const express = require('express');
 const { body, query, param, validationResult } = require('express-validator');
 const supabase = require('../lib/supabase');
 const { sendWhatsAppNotification } = require('../lib/whatsapp');
+const { sendStatusEmail }         = require('../lib/email');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -68,13 +69,14 @@ router.get('/dashboard', async (req, res) => {
 // ──────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    const { status, date, technician, search } = req.query;
+    const { status, date, technician, search, brand } = req.query;
 
     let q = supabase.from('job_cards').select('*');
 
     if (req.user.role === 'technician') q = q.eq('technician', req.user.name);
     if (status)     q = q.eq('status', status);
     if (technician && req.user.role === 'admin') q = q.ilike('technician', `%${technician}%`);
+    if (brand)      q = q.eq('phone_brand', brand);
     if (date)       q = q.gte('created_at', `${date}T00:00:00.000Z`).lte('created_at', `${date}T23:59:59.999Z`);
 
     if (search) {
@@ -169,6 +171,7 @@ router.post('/',
   body('phone_brand').notEmpty().trim(),
   body('phone_model').notEmpty().trim(),
   body('reported_issue').notEmpty().trim(),
+  body('customer_email').optional().isEmail().normalizeEmail(),
   body('customer_phone').optional().trim(),
   body('alt_mobile_no').optional().trim(),
   body('address').optional().trim(),
@@ -203,6 +206,7 @@ router.post('/',
           job_card_id:       idData,
           salutation:        b.salutation        || null,
           customer_name:     b.customer_name,
+          customer_email:    b.customer_email    || null,
           customer_phone:    b.customer_phone    || null,
           alt_mobile_no:     b.alt_mobile_no     || null,
           address:           b.address           || null,
@@ -273,7 +277,7 @@ router.patch('/:id',
         ? ['status']
         : [
             'status', 'technician', 'eta', 'remarks',
-            'salutation', 'customer_name', 'customer_phone', 'alt_mobile_no', 'address',
+            'salutation', 'customer_name', 'customer_email', 'customer_phone', 'alt_mobile_no', 'address',
             'phone_brand', 'phone_model', 'color', 'pattern_password', 'imei_status',
             'power_status', 'touch_status', 'display_status', 'device_condition',
             'reported_issue', 'data_backup',
@@ -303,11 +307,12 @@ router.patch('/:id',
           new_status: updates.status,
         });
         await sendWhatsAppNotification(data, updates.status);
+        await sendStatusEmail(data, updates.status);
       }
 
       // Log field changes
       const TRACKED_FIELDS = [
-        'salutation', 'customer_name', 'customer_phone', 'alt_mobile_no', 'address',
+        'salutation', 'customer_name', 'customer_email', 'customer_phone', 'alt_mobile_no', 'address',
         'phone_brand', 'phone_model', 'color', 'pattern_password', 'imei_status',
         'power_status', 'touch_status', 'display_status', 'device_condition',
         'reported_issue', 'remarks', 'data_backup',

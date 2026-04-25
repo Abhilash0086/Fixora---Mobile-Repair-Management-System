@@ -1,0 +1,77 @@
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const supabase = require('../lib/supabase');
+const { authenticate } = require('../middleware/auth');
+
+const router = express.Router();
+router.use(authenticate);
+
+// ──────────────────────────────────────────────
+// GET /api/enquiries          — all
+// GET /api/enquiries?today=true — today only
+// ──────────────────────────────────────────────
+router.get('/', async (req, res) => {
+  try {
+    let q = supabase.from('enquiries').select('*').order('created_at', { ascending: false });
+    if (req.query.today === 'true') {
+      const today = new Date().toISOString().slice(0, 10);
+      q = q
+        .gte('created_at', `${today}T00:00:00.000Z`)
+        .lte('created_at', `${today}T23:59:59.999Z`);
+    }
+    const { data, error } = await q;
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ──────────────────────────────────────────────
+// POST /api/enquiries
+// ──────────────────────────────────────────────
+router.post('/',
+  body('name').notEmpty().trim(),
+  body('contact_no').optional().trim(),
+  body('device').optional().trim(),
+  body('description').optional().trim(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+    try {
+      const { name, contact_no, device, description } = req.body;
+      const { data, error } = await supabase
+        .from('enquiries')
+        .insert({
+          name,
+          contact_no:  contact_no  || null,
+          device:      device      || null,
+          description: description || null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      res.status(201).json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// ──────────────────────────────────────────────
+// DELETE /api/enquiries/:id
+// ──────────────────────────────────────────────
+router.delete('/:id', async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('enquiries')
+      .delete()
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

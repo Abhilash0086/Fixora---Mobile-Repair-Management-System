@@ -113,7 +113,7 @@ function AddableSelect({ label, required, options, value, onChange, onAdd, place
 const INITIAL = {
   // Customer
   salutation: '', customer_name: '', customer_phone: '',
-  alt_mobile_no: '', address: '',
+  customer_email: '', alt_mobile_no: '', address: '',
   // Device
   phone_brand: '', phone_model: '', color: '',
   pattern_password: '', imei_status: '',
@@ -237,6 +237,10 @@ export default function NewJobCard() {
                 <div className="field">
                   <label>Alternative Mobile No</label>
                   <PhoneInput value={form.alt_mobile_no} onChange={v => set('alt_mobile_no', v)} placeholder="XXXXX XXXXX" />
+                </div>
+                <div className="field span2">
+                  <label>Email</label>
+                  <input type="email" value={form.customer_email} onChange={e => set('customer_email', e.target.value)} placeholder="customer@example.com" />
                 </div>
                 <div className="field span2">
                   <label>Address</label>
@@ -373,9 +377,7 @@ export default function NewJobCard() {
             </div>
             <div className="field">
               <label>Status</label>
-              <select value={form.status} onChange={e => set('status', e.target.value)}>
-                {STATUSES.map(s => <option key={s}>{s}</option>)}
-              </select>
+              <input value="Pending" readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} />
             </div>
           </div>
         </div>

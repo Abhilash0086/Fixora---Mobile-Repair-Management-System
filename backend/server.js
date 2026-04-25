@@ -8,6 +8,7 @@ const authRouter      = require('./routes/auth');
 const usersRouter     = require('./routes/users');
 const analyticsRouter = require('./routes/analytics');
 const publicRouter    = require('./routes/public');
+const enquiriesRouter = require('./routes/enquiries');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -27,6 +28,7 @@ app.use('/api/job-cards',  jobCardsRouter);
 app.use('/api/options',    optionsRouter);
 app.use('/api/analytics',  analyticsRouter);
 app.use('/api/public',     publicRouter);
+app.use('/api/enquiries',  enquiriesRouter);
 
 // ── Health check ────────────────────────────────────────────
 app.get('/health', (_, res) => res.json({ status: 'ok', app: 'Fixora API' }));

@@ -166,6 +166,33 @@ html, body, #root {
 }
 .page-subtitle { color: var(--text-2); font-size: 13px; margin-top: 4px; }
 
+/* ── Section header (used in Dashboard) ────────────────── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  margin-top: 8px;
+}
+.section-title {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-count {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-3);
+  background: var(--bg-3);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
 /* ── Cards ─────────────────────────────────────────────── */
 .card {
   background: var(--bg-2);
@@ -392,6 +419,18 @@ select option { background: var(--bg-2); }
   align-items: center;
 }
 .search-input-wrap input { padding-left: 36px; }
+
+/* ── Filter bar (All Job Cards) ─────────────────────────── */
+.filter-bar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.filter-bar .filter-search { width: 100%; }
+.filter-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-row select,
+.filter-row input[type="date"] { flex: 1; min-width: 130px; }
 
 /* ── Modal ─────────────────────────────────────────────── */
 .modal-backdrop {
@@ -949,11 +988,15 @@ select option { background: var(--bg-2); }
 
 @media (max-width: 600px) {
   .form-grid { grid-template-columns: 1fr; }
+  .form-grid-4 { grid-template-columns: 1fr 1fr !important; }
   .field.span2 { grid-column: span 1; }
   .page { padding: 20px 16px; }
   .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .search-row { flex-direction: column; }
   .search-row > * { width: 100%; }
+  .filter-row { flex-direction: column; }
+  .filter-row select,
+  .filter-row input[type="date"] { width: 100%; min-width: unset; }
 }
 
 /* ── Customer Tracking Page ─────────────────────────────── */
