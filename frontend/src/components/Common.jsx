@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ClipboardList, X, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 // ─── Status Badge ────────────────────────────────────────────
@@ -188,6 +188,15 @@ export function ConfirmModal({ title, message, detail, confirmLabel = 'Confirm',
 
 // ─── Guest Modal ──────────────────────────────────────────────
 export function GuestModal({ onClose }) {
+  const { logout } = useAuth();
+  const navigate   = useNavigate();
+
+  function handleSignIn() {
+    logout();
+    onClose();
+    navigate('/login');
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -205,7 +214,7 @@ export function GuestModal({ onClose }) {
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button className="btn btn-ghost" onClick={onClose}>Continue Exploring</button>
-            <Link to="/login" className="btn btn-primary" onClick={onClose}>Sign In</Link>
+            <button className="btn btn-primary" onClick={handleSignIn}>Sign In</button>
           </div>
         </div>
       </div>

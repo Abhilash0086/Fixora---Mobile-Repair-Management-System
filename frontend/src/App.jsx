@@ -71,7 +71,10 @@ function AppShell() {
             <span className="guest-banner-text">
               👋 You're exploring as a guest — some features are view-only
             </span>
-            <Link to="/login" className="btn btn-primary btn-sm">Sign In for Full Access</Link>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <Link to="/" className="btn btn-ghost btn-sm">← Home</Link>
+              <GuestSignInButton />
+            </div>
           </div>
         )}
         <div className="mobile-header">
@@ -83,7 +86,7 @@ function AppShell() {
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/new"       element={<ProtectedRoute adminOnly><NewJobCard /></ProtectedRoute>} />
-          <Route path="/jobs"      element={<ProtectedRoute adminOnly><AllJobCards /></ProtectedRoute>} />
+          <Route path="/jobs"      element={<ProtectedRoute adminOnly guestOk><AllJobCards /></ProtectedRoute>} />
           <Route path="/ready"     element={<ReadyJobCards />} />
           <Route path="/delivered" element={<DeliveredJobCards />} />
           <Route path="/search"    element={<Search />} />
@@ -112,9 +115,20 @@ export default function App() {
   );
 }
 
+function GuestSignInButton() {
+  const { logout } = useAuth();
+  const navigate   = useNavigate();
+  function handleSignIn() { logout(); navigate('/login'); }
+  return (
+    <button className="btn btn-primary btn-sm" onClick={handleSignIn}>
+      Sign In
+    </button>
+  );
+}
+
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="page"><Loading /></div>;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user && user.role !== 'guest') return <Navigate to="/dashboard" replace />;
   return children;
 }

@@ -76,7 +76,7 @@ export default function Landing() {
   const [demoLoading, setDemoLoading] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate('/dashboard', { replace: true });
+    if (!loading && user && user.role !== 'guest') navigate('/dashboard', { replace: true });
   }, [user, loading, navigate]);
 
   async function handleDemo() {
