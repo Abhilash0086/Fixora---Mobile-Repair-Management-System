@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   ClipboardList, Users, Link2, Mail, BarChart2, Printer,
@@ -88,7 +88,7 @@ export default function Landing() {
             <Wrench size={18} strokeWidth={2.25} />
             Fixora
           </div>
-          <a href="/login" className="lp-nav-signin">Sign In →</a>
+          <Link to="/login" className="lp-nav-signin">Sign In →</Link>
         </div>
       </nav>
 
@@ -108,9 +108,9 @@ export default function Landing() {
               technicians, and keep customers informed — from intake
               to delivery.
             </p>
-            <a href="/login" className="lp-btn-primary">
+            <Link to="/login" className="lp-btn-primary">
               Get Started <ArrowRight size={15} strokeWidth={2.5} />
-            </a>
+            </Link>
           </div>
 
           {/* ── UI Mockup ── */}
@@ -266,7 +266,7 @@ export default function Landing() {
         <div className="lp-section-inner lp-cta-inner">
           <h2 className="lp-cta-title">Ready to organise your repair shop?</h2>
           <p className="lp-cta-sub">Sign in and start managing repairs the right way.</p>
-          <a href="/login" className="lp-btn-primary lp-btn-lg">
+          <Link to="/login" className="lp-btn-primary lp-btn-lg">
             Get Started <ArrowRight size={16} strokeWidth={2.5} />
           </a>
         </div>
