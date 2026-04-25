@@ -35,6 +35,32 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/guest
+router.post('/guest', async (req, res) => {
+  const email    = process.env.GUEST_EMAIL;
+  const password = process.env.GUEST_PASS;
+  if (!email || !password) {
+    return res.status(503).json({ error: 'Guest mode is not configured' });
+  }
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return res.status(401).json({ error: 'Guest login failed' });
+
+    res.json({
+      token: data.session.access_token,
+      user: {
+        id:    data.user.id,
+        email: data.user.email,
+        name:  'Guest',
+        role:  'guest',
+        theme: 'dark',
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/auth/me
 router.get('/me', authenticate, (req, res) => {
   res.json(req.user);

@@ -166,6 +166,23 @@ html, body, #root {
 }
 .page-subtitle { color: var(--text-2); font-size: 13px; margin-top: 4px; }
 
+/* ── Guest Banner ───────────────────────────────────────── */
+.guest-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 24px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-2));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  flex-wrap: wrap;
+}
+.guest-banner-text {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
 /* ── Section header (used in Dashboard) ────────────────── */
 .section-header {
   display: flex;
@@ -1040,6 +1057,21 @@ select option { background: var(--bg-2); }
   text-decoration: none;
 }
 .lp-logo-muted { color: #a1a1aa; }
+.lp-nav-demo {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #71717a;
+  background: transparent;
+  border: 1.5px solid #e4e4e7;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.lp-nav-demo:hover { border-color: #a1a1aa; color: #18181b; }
+.lp-nav-demo:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .lp-nav-signin {
   font-family: 'Outfit', sans-serif;
   font-size: 14px;

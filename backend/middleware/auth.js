@@ -36,4 +36,11 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-module.exports = { authenticate, requireAdmin };
+function blockGuest(req, res, next) {
+  if (req.user?.role === 'guest') {
+    return res.status(403).json({ error: 'Read-only access. Please sign in for full access.' });
+  }
+  next();
+}
+
+module.exports = { authenticate, requireAdmin, blockGuest };

@@ -3,7 +3,7 @@ const { body, query, param, validationResult } = require('express-validator');
 const supabase = require('../lib/supabase');
 const { sendWhatsAppNotification } = require('../lib/whatsapp');
 const { sendStatusEmail }         = require('../lib/email');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, blockGuest } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(authenticate);
@@ -167,6 +167,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/job-cards
 // ──────────────────────────────────────────────
 router.post('/',
+  blockGuest,
   body('customer_name').notEmpty().trim(),
   body('phone_brand').notEmpty().trim(),
   body('phone_model').notEmpty().trim(),
@@ -260,6 +261,7 @@ router.post('/',
 // PATCH /api/job-cards/:id
 // ──────────────────────────────────────────────
 router.patch('/:id',
+  blockGuest,
   body('status').optional().isIn(['Pending', 'In Progress', 'Ready for Delivery', 'Delivered', 'Returned', 'Delayed', 'Cancelled']),
   body('technician').optional().trim(),
   body('eta').optional().isISO8601(),

@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const supabase = require('../lib/supabase');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, blockGuest } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(authenticate);
@@ -31,6 +31,7 @@ router.get('/', async (req, res) => {
 // POST /api/enquiries
 // ──────────────────────────────────────────────
 router.post('/',
+  blockGuest,
   body('name').notEmpty().trim(),
   body('contact_no').optional().trim(),
   body('device').optional().trim(),
@@ -61,7 +62,7 @@ router.post('/',
 // ──────────────────────────────────────────────
 // DELETE /api/enquiries/:id
 // ──────────────────────────────────────────────
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', blockGuest, async (req, res) => {
   try {
     const { error } = await supabase
       .from('enquiries')

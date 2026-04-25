@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { Badge, Loading, Empty, StatusSelect, ConfirmModal, fmtDate, fmtDateTime, toast } from '../components/Common';
+import { Badge, Loading, Empty, StatusSelect, ConfirmModal, fmtDate, fmtDateTime, toast, useGuestGate } from '../components/Common';
 import { JobCardModal } from '../components/JobCardModal';
 import { Search as SearchIcon, Pencil, XCircle, Printer, SlidersHorizontal } from 'lucide-react';
 import { printJobCard } from '../lib/printJobCard';
@@ -46,6 +46,7 @@ export default function AllJobCards() {
 
   const setF = (k, v) => setFilters(f => ({ ...f, [k]: v }));
   const hasFilters = Object.values(filters).some(Boolean);
+  const { gate, modal } = useGuestGate();
 
   function handleCancel(e, job) {
     e.stopPropagation();
@@ -165,7 +166,7 @@ export default function AllJobCards() {
                       <button
                         className="row-action-btn"
                         title="Edit"
-                        onClick={e => handleEdit(e, j)}
+                        onClick={e => { e.stopPropagation(); gate(() => handleEdit(e, j)); }}
                       >
                         <Pencil size={14} />
                       </button>
@@ -175,7 +176,7 @@ export default function AllJobCards() {
                         className="row-action-btn row-action-cancel"
                         title="Cancel job"
                         disabled={isCancelDisabled(j) || cancelling === j.job_card_id}
-                        onClick={e => handleCancel(e, j)}
+                        onClick={e => { e.stopPropagation(); gate(() => handleCancel(e, j)); }}
                       >
                         <XCircle size={14} />
                       </button>
@@ -205,6 +206,7 @@ export default function AllJobCards() {
         />
       )}
 
+      {modal}
       {cancelTarget && (
         <ConfirmModal
           title="Cancel Job Card"

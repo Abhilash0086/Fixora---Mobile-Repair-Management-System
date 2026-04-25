@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -71,12 +71,23 @@ const STATUSES = [
 ];
 
 export default function Landing() {
-  const { user, loading } = useAuth();
+  const { user, loading, guestLogin } = useAuth();
   const navigate = useNavigate();
+  const [demoLoading, setDemoLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate('/dashboard', { replace: true });
   }, [user, loading, navigate]);
+
+  async function handleDemo() {
+    setDemoLoading(true);
+    try {
+      await guestLogin();
+      navigate('/dashboard', { replace: true });
+    } catch {
+      setDemoLoading(false);
+    }
+  }
 
   return (
     <div className="lp">
@@ -88,7 +99,12 @@ export default function Landing() {
             <Wrench size={18} strokeWidth={2.25} />
             Fixora
           </div>
-          <Link to="/login" className="lp-nav-signin">Sign In →</Link>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <button className="lp-nav-demo" onClick={handleDemo} disabled={demoLoading}>
+              {demoLoading ? 'Loading…' : 'Try Demo'}
+            </button>
+            <Link to="/login" className="lp-nav-signin">Sign In →</Link>
+          </div>
         </div>
       </nav>
 

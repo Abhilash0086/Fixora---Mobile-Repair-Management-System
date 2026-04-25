@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { Badge, Loading, fmtDateTime, toast } from '../components/Common';
+import { Badge, Loading, fmtDateTime, toast, useGuestGate } from '../components/Common';
 import { JobCardModal } from '../components/JobCardModal';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, PhoneCall, Trash2, X as XIcon } from 'lucide-react';
@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [deleting,   setDeleting]   = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { gate, modal } = useGuestGate();
 
   useEffect(() => { load(); }, []);
 
@@ -118,7 +119,7 @@ export default function Dashboard() {
               + New Job Card
             </button>
           )}
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(true)}>
+          <button className="btn btn-ghost btn-sm" onClick={() => gate(() => setShowModal(true))}>
             + New Enquiry
           </button>
         </div>
@@ -160,7 +161,7 @@ export default function Dashboard() {
                         className="row-action-btn row-action-cancel"
                         title="Delete enquiry"
                         disabled={deleting === e.id}
-                        onClick={() => handleDelete(e.id)}
+                        onClick={() => gate(() => handleDelete(e.id))}
                       >
                         <Trash2 size={13} />
                       </button>
@@ -242,6 +243,7 @@ export default function Dashboard() {
           onUpdated={load}
         />
       )}
+      {modal}
     </div>
   );
 }

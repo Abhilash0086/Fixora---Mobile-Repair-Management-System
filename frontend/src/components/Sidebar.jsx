@@ -24,12 +24,21 @@ const TECH_NAV = [
   { path: '/search',    icon: Search,          label: 'Search' },
 ];
 
+const GUEST_NAV = [
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/jobs',      icon: ClipboardList,   label: 'All Job Cards' },
+  { path: '/ready',     icon: PackageCheck,    label: 'Ready for Delivery' },
+  { path: '/delivered', icon: CheckCircle,     label: 'Delivered' },
+  { path: '/search',    icon: Search,          label: 'Search' },
+  { path: '/analytics', icon: BarChart2,       label: 'Analytics' },
+];
+
 export function Sidebar({ theme, toggleTheme, sidebarOpen, closeSidebar }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const navItems = user?.role === 'admin' ? ADMIN_NAV : TECH_NAV;
+  const navItems = user?.role === 'admin' ? ADMIN_NAV : user?.role === 'guest' ? GUEST_NAV : TECH_NAV;
 
   function go(path) {
     navigate(path);

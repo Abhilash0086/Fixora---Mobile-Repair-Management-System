@@ -23,6 +23,13 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+  async function guestLogin() {
+    const data = await api.guestLogin();
+    localStorage.setItem('fx_token', data.token);
+    setUser(data.user);
+    return data.user;
+  }
+
   function logout() {
     localStorage.removeItem('fx_token');
     setUser(null);
@@ -33,7 +40,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, guestLogin, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

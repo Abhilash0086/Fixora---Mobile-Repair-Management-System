@@ -86,7 +86,8 @@ function fallbackCopy(text) {
 
 export function JobCardModal({ jobCardId, onClose, onUpdated }) {
   const { user } = useAuth();
-  const isTech = user?.role === 'technician';
+  const isTech  = user?.role === 'technician';
+  const isGuest = user?.role === 'guest';
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -470,7 +471,7 @@ export function JobCardModal({ jobCardId, onClose, onUpdated }) {
           ) : (
             <>
               <button className="btn btn-ghost" onClick={onClose}>Close</button>
-              {!isTech && (
+              {!isTech && !isGuest && (
                 <button className="btn btn-primary" onClick={() => setEditing(true)}>Edit</button>
               )}
             </>

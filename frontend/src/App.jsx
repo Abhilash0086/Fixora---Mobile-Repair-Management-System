@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { api } from './lib/api';
 import { Sidebar } from './components/Sidebar';
 import { ToastArea, Loading } from './components/Common';
+import { Link } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import NewJobCard from './pages/NewJobCard';
@@ -17,11 +18,12 @@ import TrackJobCard from './pages/TrackJobCard';
 import Landing from './pages/Landing';
 import './index.css';
 
-function ProtectedRoute({ children, adminOnly = false }) {
+function ProtectedRoute({ children, adminOnly = false, guestOk = false }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="page"><Loading /></div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (adminOnly && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
+  if (adminOnly && user.role !== 'admin' && !(guestOk && user.role === 'guest'))
+    return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -64,6 +66,14 @@ function AppShell() {
       />
       {sidebarOpen && <div className="sidebar-overlay" onClick={closeSidebar} />}
       <main className="main-content">
+        {user?.role === 'guest' && (
+          <div className="guest-banner">
+            <span className="guest-banner-text">
+              👋 You're exploring as a guest — some features are view-only
+            </span>
+            <Link to="/login" className="btn btn-primary btn-sm">Sign In for Full Access</Link>
+          </div>
+        )}
         <div className="mobile-header">
           <button className="hamburger" onClick={toggleSidebar}>
             <span /><span /><span />
@@ -77,7 +87,7 @@ function AppShell() {
           <Route path="/ready"     element={<ReadyJobCards />} />
           <Route path="/delivered" element={<DeliveredJobCards />} />
           <Route path="/search"    element={<Search />} />
-          <Route path="/analytics" element={<ProtectedRoute adminOnly><Analytics /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute adminOnly guestOk><Analytics /></ProtectedRoute>} />
           <Route path="/users"     element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
           <Route path="*"          element={<Navigate to="/dashboard" replace />} />
         </Routes>

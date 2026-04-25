@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, X, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // ─── Status Badge ────────────────────────────────────────────
 export function Badge({ status }) {
@@ -182,6 +184,48 @@ export function ConfirmModal({ title, message, detail, confirmLabel = 'Confirm',
       </div>
     </div>
   );
+}
+
+// ─── Guest Modal ──────────────────────────────────────────────
+export function GuestModal({ onClose }) {
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Lock size={16} strokeWidth={2} style={{ color: 'var(--accent)' }} />
+            <div className="modal-title">Sign in required</div>
+          </div>
+          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+        </div>
+        <div style={{ padding: '20px 24px 24px' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.65, marginBottom: 24 }}>
+            You're exploring Fixora as a guest. Sign in to create job cards,
+            manage enquiries, and use all features.
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button className="btn btn-ghost" onClick={onClose}>Continue Exploring</button>
+            <Link to="/login" className="btn btn-primary" onClick={onClose}>Sign In</Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── useGuestGate hook ────────────────────────────────────────
+export function useGuestGate() {
+  const { user } = useAuth();
+  const [show, setShow] = useState(false);
+  const isGuest = user?.role === 'guest';
+
+  function gate(fn) {
+    if (isGuest) { setShow(true); return; }
+    fn?.();
+  }
+
+  const modal = show ? <GuestModal onClose={() => setShow(false)} /> : null;
+  return { gate, modal, isGuest };
 }
 
 // ─── Format helpers ───────────────────────────────────────────

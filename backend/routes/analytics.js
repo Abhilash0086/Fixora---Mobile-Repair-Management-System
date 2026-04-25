@@ -1,10 +1,16 @@
 const express = require('express');
 const supabase = require('../lib/supabase');
-const { authenticate, requireAdmin } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(authenticate);
-router.use(requireAdmin);
+// Allow admin and guest; block technician
+router.use((req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'guest') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  next();
+});
 
 // ──────────────────────────────────────────────
 // GET /api/analytics/revenue?from=YYYY-MM-DD&to=YYYY-MM-DD
