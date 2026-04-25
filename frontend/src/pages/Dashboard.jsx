@@ -176,7 +176,7 @@ export default function Dashboard() {
       {/* ── New Enquiry Modal ── */}
       {showModal && (
         <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="modal-box" style={{ maxWidth: 460 }} onClick={e => e.stopPropagation()}>
+          <div className="modal" style={{ maxWidth: 460 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-title">New Enquiry</div>
               <button className="modal-close" onClick={() => setShowModal(false)}>

@@ -246,6 +246,9 @@ router.post('/',
       // WhatsApp stub notification
       await sendWhatsAppNotification(data, 'Pending');
 
+      // Email notification on creation
+      await sendStatusEmail(data, 'Pending');
+
       res.status(201).json(data);
     } catch (err) {
       res.status(500).json({ error: err.message });
