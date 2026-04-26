@@ -1476,7 +1476,7 @@ select option { background: var(--bg-2); }
 .lp-footer {
   background: #18181b;
   border-top: 1px solid #27272a;
-  padding: 24px 32px;
+  padding: 28px 32px;
 }
 .lp-footer-inner {
   max-width: 1100px;
@@ -1485,7 +1485,7 @@ select option { background: var(--bg-2); }
   align-items: center;
   justify-content: space-between;
 }
-.lp-footer-copy { font-size: 12px; color: #52525b; }
+.lp-footer-copy { font-size: 12px; color: #71717a; }
 
 /* ── Landing responsive ──────────────────────────────────── */
 @media (max-width: 900px) {
