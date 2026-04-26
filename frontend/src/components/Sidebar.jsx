@@ -38,7 +38,8 @@ export function Sidebar({ theme, toggleTheme, sidebarOpen, closeSidebar }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const navItems = user?.role === 'admin' ? ADMIN_NAV : user?.role === 'guest' ? GUEST_NAV : TECH_NAV;
+  const role = user?.role;
+  const navItems = (role === 'admin' || role === 'owner') ? ADMIN_NAV : role === 'guest' ? GUEST_NAV : TECH_NAV;
 
   function go(path) {
     navigate(path);

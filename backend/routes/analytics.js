@@ -4,9 +4,9 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(authenticate);
-// Allow admin and guest; block technician
+// Allow owner, admin and guest; block technician
 router.use((req, res, next) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'guest') {
+  if (!['owner', 'admin', 'guest'].includes(req.user.role)) {
     return res.status(403).json({ error: 'Access denied' });
   }
   next();

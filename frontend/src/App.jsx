@@ -22,7 +22,7 @@ function ProtectedRoute({ children, adminOnly = false, guestOk = false }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="page"><Loading /></div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (adminOnly && user.role !== 'admin' && !(guestOk && user.role === 'guest'))
+  if (adminOnly && user.role !== 'admin' && user.role !== 'owner' && !(guestOk && user.role === 'guest'))
     return <Navigate to="/dashboard" replace />;
   return children;
 }

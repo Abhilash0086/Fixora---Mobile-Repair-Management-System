@@ -783,8 +783,10 @@ select option { background: var(--bg-2); }
   padding: 2px 8px;
   border-radius: 20px;
 }
-.role-admin       { background: rgba(249,115,22,0.12); color: var(--accent); }
-.role-technician  { background: rgba(96,165,250,0.12); color: var(--s-progress); }
+.role-owner       { background: rgba(168,85,247,0.15);  color: #c084fc; }
+.role-admin       { background: rgba(249,115,22,0.12);  color: var(--accent); }
+.role-technician  { background: rgba(96,165,250,0.12);  color: var(--s-progress); }
+.role-guest       { background: rgba(156,163,175,0.12); color: var(--text-3); }
 
 /* ── Sidebar user info ─────────────────────────────────── */
 .sidebar-user {
