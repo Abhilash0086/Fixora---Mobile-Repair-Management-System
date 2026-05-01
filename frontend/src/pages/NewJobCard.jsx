@@ -1,25 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { toast, STATUSES, SectionTitle, RadioGroup, PhoneInput } from '../components/Common';
+import { toast, SectionTitle, RadioGroup, PhoneInput } from '../components/Common';
 import { CheckCircle, Check, X as XIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const SALUTATIONS = ['Mr', 'Mrs', 'Ms', 'Dr', 'Other'];
+
+const COMMON_COMPLAINTS = [
+  'Screen cracked / display damaged',
+  'Battery not charging / draining fast',
+  'Device not switching on',
+  'Water damage',
+  'Speaker / microphone not working',
+];
 
 // ── Brands & models from Supabase via API ─────────────────────
 function useAdHocOptions() {
   const [brands, setBrands] = useState([]);
   const [modelCache, setModelCache] = useState({});
 
-  // Load all brands once on mount
   useEffect(() => {
     api.getBrands()
       .then(setBrands)
       .catch(() => toast('Failed to load brands', 'error'));
   }, []);
 
-  // Lazy-load models per brand (cached so no repeat fetches)
   async function loadModels(brand) {
     if (!brand || modelCache[brand]) return;
     try {
@@ -33,7 +39,6 @@ function useAdHocOptions() {
   async function addBrand(name) {
     try {
       await api.addBrand(name);
-      // Refresh full brand list to respect sort_order
       const updated = await api.getBrands();
       setBrands(updated);
     } catch (e) {
@@ -129,13 +134,13 @@ const INITIAL = {
   eta: '', prepared_by: '', technician: '', status: 'Pending',
 };
 
-
 export default function NewJobCard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [form, setForm] = useState(INITIAL);
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState(null);
+  const [complaintChoice, setComplaintChoice] = useState('');
   const { brands, loadModels, addBrand, getModels, addModel } = useAdHocOptions();
   const [users, setUsers] = useState([]);
 
@@ -143,21 +148,41 @@ export default function NewJobCard() {
     api.getUsers().then(setUsers).catch(() => {});
   }, []);
 
-  // Auto-fill prepared_by with logged-in user
   useEffect(() => {
     if (user?.name) set('prepared_by', user.name);
   }, [user]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  // Pre-fetch models whenever brand changes
   useEffect(() => { loadModels(form.phone_brand); }, [form.phone_brand]);
+
+  function handleComplaintSelect(v) {
+    setComplaintChoice(v);
+    if (v === 'other') {
+      set('reported_issue', '');
+    } else {
+      set('reported_issue', v);
+    }
+  }
+
+  // Phone is valid only if it has a number part ("+91 XXXXXXXXXX")
+  function phoneIsValid(val) {
+    return val && val.includes(' ') && val.split(' ')[1]?.trim().length > 0;
+  }
 
   async function submit(e) {
     e.preventDefault();
-    if (!form.customer_name || !form.phone_brand || !form.phone_model || !form.reported_issue) {
-      toast('Please fill all required fields', 'error');
-      return;
+    if (!form.customer_name) {
+      toast('Customer name is required', 'error'); return;
+    }
+    if (!phoneIsValid(form.customer_phone)) {
+      toast('Mobile number is required', 'error'); return;
+    }
+    if (!form.phone_brand || !form.phone_model) {
+      toast('Brand and model are required', 'error'); return;
+    }
+    if (!form.reported_issue) {
+      toast('Please select or describe the complaint', 'error'); return;
     }
     setSaving(true);
     try {
@@ -169,6 +194,12 @@ export default function NewJobCard() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function resetForm() {
+    setCreated(null);
+    setForm(INITIAL);
+    setComplaintChoice('');
   }
 
   if (created) {
@@ -188,7 +219,7 @@ export default function NewJobCard() {
             {created.phone_brand} {created.phone_model} · {created.customer_name}
           </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <button className="btn btn-ghost" onClick={() => { setCreated(null); setForm(INITIAL); }}>
+            <button className="btn btn-ghost" onClick={resetForm}>
               + New Card
             </button>
             <button className="btn btn-primary" onClick={() => navigate('/jobs')}>
@@ -209,7 +240,6 @@ export default function NewJobCard() {
 
       <form onSubmit={submit}>
 
-        {/* ── 2-column section grid ── */}
         <div className="form-section-grid">
 
           {/* ── LEFT column ── */}
@@ -228,10 +258,10 @@ export default function NewJobCard() {
                 </div>
                 <div className="field">
                   <label>Customer Name *</label>
-                  <input value={form.customer_name} onChange={e => set('customer_name', e.target.value)} placeholder="Full name" required />
+                  <input value={form.customer_name} onChange={e => set('customer_name', e.target.value)} placeholder="Full name" />
                 </div>
                 <div className="field">
-                  <label>Mobile No</label>
+                  <label>Mobile No *</label>
                   <PhoneInput value={form.customer_phone} onChange={v => set('customer_phone', v)} placeholder="XXXXX XXXXX" />
                 </div>
                 <div className="field">
@@ -320,9 +350,25 @@ export default function NewJobCard() {
               <SectionTitle>Complaints</SectionTitle>
               <div className="form-grid">
                 <div className="field span2">
-                  <label>Complaints *</label>
-                  <textarea value={form.reported_issue} onChange={e => set('reported_issue', e.target.value)} placeholder="Describe the problem reported by the customer..." required />
+                  <label>Complaint *</label>
+                  <select value={complaintChoice} onChange={e => handleComplaintSelect(e.target.value)}>
+                    <option value="">Select complaint</option>
+                    {COMMON_COMPLAINTS.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    <option value="other">Other (describe below)</option>
+                  </select>
                 </div>
+                {complaintChoice === 'other' && (
+                  <div className="field span2">
+                    <label>Describe complaint</label>
+                    <textarea
+                      value={form.reported_issue}
+                      onChange={e => set('reported_issue', e.target.value)}
+                      placeholder="Describe the problem reported by the customer..."
+                    />
+                  </div>
+                )}
                 <div className="field span2">
                   <label>Remarks / Narration</label>
                   <textarea value={form.remarks} onChange={e => set('remarks', e.target.value)} placeholder="Internal notes or additional narration..." style={{ minHeight: 70 }} />
@@ -383,7 +429,7 @@ export default function NewJobCard() {
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16, marginBottom: 32 }}>
-          <button type="button" className="btn btn-ghost" onClick={() => navigate('/')}>Cancel</button>
+          <button type="button" className="btn btn-ghost" onClick={() => navigate('/dashboard')}>Cancel</button>
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? 'Creating...' : 'Create Job Card'}
           </button>
