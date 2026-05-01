@@ -64,7 +64,7 @@ export default function SuperAdmin() {
       setOrgs(data);
       setUnlocked(true);
     } catch (err) {
-      setKeyError('Invalid admin key. Please try again.');
+      setKeyError(err.message || 'Invalid admin key. Please try again.');
     } finally {
       setUnlocking(false);
     }

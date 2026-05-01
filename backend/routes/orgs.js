@@ -8,8 +8,11 @@ const router = express.Router();
 // Pass the key in the X-Admin-Key header.
 function requireSuperAdmin(req, res, next) {
   const key = req.headers['x-admin-key'];
-  if (!key || !process.env.SUPER_ADMIN_KEY || key !== process.env.SUPER_ADMIN_KEY) {
-    return res.status(403).json({ error: 'Forbidden' });
+  if (!process.env.SUPER_ADMIN_KEY) {
+    return res.status(503).json({ error: 'SUPER_ADMIN_KEY is not set in environment variables' });
+  }
+  if (!key || key !== process.env.SUPER_ADMIN_KEY) {
+    return res.status(403).json({ error: 'Invalid admin key' });
   }
   next();
 }
