@@ -354,6 +354,29 @@ tbody tr:hover { background: var(--bg-3); }
 .badge-Delayed            { background: rgba(251,146,60,0.12);  color: var(--s-delayed); }
 .badge-Cancelled          { background: rgba(156,163,175,0.15); color: var(--text-2); }
 
+/* ── Inline status select (row-level status changer) ───── */
+.inline-status-select {
+  appearance: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.inline-status-select:disabled { opacity: 0.5; cursor: wait; }
+.inline-status-select:hover:not(:disabled) { opacity: 0.8; }
+.inline-status-select.status-Pending            { background: rgba(250,204,21,0.12);  color: var(--s-pending); }
+.inline-status-select.status-In-Progress        { background: rgba(96,165,250,0.12);  color: var(--s-progress); }
+.inline-status-select.status-Ready-for-Delivery { background: rgba(74,222,128,0.12);  color: var(--s-ready); }
+.inline-status-select.status-Delivered          { background: rgba(167,139,250,0.12); color: var(--s-delivered); }
+.inline-status-select.status-Returned           { background: rgba(248,113,113,0.12); color: var(--s-returned); }
+.inline-status-select.status-Delayed            { background: rgba(251,146,60,0.12);  color: var(--s-delayed); }
+.inline-status-select.status-Cancelled          { background: rgba(156,163,175,0.15); color: var(--text-2); }
+
 /* ── Buttons ───────────────────────────────────────────── */
 .btn {
   display: inline-flex;

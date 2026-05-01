@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { Badge, Loading, Empty, StatusSelect, ConfirmModal, fmtDate, fmtDateTime, toast, useGuestGate } from '../components/Common';
+import { Badge, Loading, Empty, StatusSelect, ConfirmModal, fmtDate, fmtDateTime, toast, useGuestGate, STATUSES } from '../components/Common';
 import { JobCardModal } from '../components/JobCardModal';
 import { Search as SearchIcon, Pencil, XCircle, Printer, SlidersHorizontal } from 'lucide-react';
 import { printJobCard } from '../lib/printJobCard';
@@ -12,8 +12,9 @@ export default function AllJobCards() {
   const [loading,     setLoading]     = useState(true);
   const [selected,    setSelected]    = useState(null);
   const [filters,     setFilters]     = useState(EMPTY_FILTERS);
-  const [cancelTarget, setCancelTarget] = useState(null);
-  const [cancelling,   setCancelling]   = useState(false);
+  const [cancelTarget,  setCancelTarget]  = useState(null);
+  const [cancelling,    setCancelling]    = useState(false);
+  const [statusSaving,  setStatusSaving]  = useState(null); // job_card_id being saved
   const [technicians, setTechnicians] = useState([]);
   const [brands,      setBrands]      = useState([]);
 
@@ -82,6 +83,24 @@ export default function AllJobCards() {
   function handleEdit(e, job) {
     e.stopPropagation();
     setSelected(job.job_card_id);
+  }
+
+  async function handleStatusChange(e, job) {
+    e.stopPropagation();
+    const newStatus = e.target.value;
+    if (newStatus === job.status) return;
+    setStatusSaving(job.job_card_id);
+    try {
+      await api.updateJobCard(job.job_card_id, { status: newStatus });
+      setCards(prev => prev.map(c =>
+        c.job_card_id === job.job_card_id ? { ...c, status: newStatus } : c
+      ));
+      toast(`Status → ${newStatus}`);
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      setStatusSaving(null);
+    }
   }
 
   const isCancelDisabled = job =>
@@ -159,7 +178,16 @@ export default function AllJobCards() {
                   <td>{j.technician || '—'}</td>
                   <td>{fmtDate(j.eta)}</td>
                   <td style={{ fontSize: 12, color: 'var(--text-3)' }}>{fmtDateTime(j.created_at)}</td>
-                  <td><Badge status={j.status} /></td>
+                  <td onClick={e => e.stopPropagation()}>
+                    <select
+                      className={`inline-status-select status-${j.status.replace(/\s+/g, '-')}`}
+                      value={j.status}
+                      disabled={statusSaving === j.job_card_id}
+                      onChange={e => gate(() => handleStatusChange(e, j))}
+                    >
+                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </td>
                   <td>
                     <div className="row-actions" onClick={e => e.stopPropagation()}>
                       {/* Edit */}
