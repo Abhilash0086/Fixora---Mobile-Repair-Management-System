@@ -13,6 +13,7 @@ router.get('/', async (req, res) => {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('id, name, role, created_at')
+      .eq('org_id', req.user.org_id)
       .order('created_at', { ascending: true });
     if (error) throw error;
     res.json(data);
@@ -25,6 +26,7 @@ router.get('/', async (req, res) => {
 // POST /api/users
 // Owner  → can create owner, admin, technician
 // Admin  → can create technician only
+// All new users inherit the caller's org_id
 // ──────────────────────────────────────────────
 router.post('/', async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -53,7 +55,7 @@ router.post('/', async (req, res) => {
 
     const { error: profileErr } = await supabase
       .from('user_profiles')
-      .insert({ id: data.user.id, name, role });
+      .insert({ id: data.user.id, name, role, org_id: req.user.org_id });
     if (profileErr) {
       await supabase.auth.admin.deleteUser(data.user.id);
       throw profileErr;
@@ -69,6 +71,7 @@ router.post('/', async (req, res) => {
 // DELETE /api/users/:id
 // Owner  → can delete admin/technician (not owner, not self)
 // Admin  → can delete technician only (not admin, owner, or self)
+// Cannot delete users outside own org
 // ──────────────────────────────────────────────
 router.delete('/:id', async (req, res) => {
   const targetId   = req.params.id;
@@ -81,11 +84,12 @@ router.delete('/:id', async (req, res) => {
   }
 
   try {
-    // Fetch the target user's role
+    // Fetch the target user — must be in the same org
     const { data: target, error: fetchErr } = await supabase
       .from('user_profiles')
-      .select('role, name')
+      .select('role, name, org_id')
       .eq('id', targetId)
+      .eq('org_id', req.user.org_id)
       .single();
     if (fetchErr || !target) return res.status(404).json({ error: 'User not found' });
 

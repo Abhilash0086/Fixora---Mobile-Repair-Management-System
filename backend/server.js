@@ -9,6 +9,7 @@ const usersRouter     = require('./routes/users');
 const analyticsRouter = require('./routes/analytics');
 const publicRouter    = require('./routes/public');
 const enquiriesRouter = require('./routes/enquiries');
+const orgsRouter      = require('./routes/orgs');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -23,6 +24,7 @@ app.use(express.json());
 
 // ── Routes ──────────────────────────────────────────────────
 app.use('/api/auth',       authRouter);
+app.use('/api/orgs',       orgsRouter);
 app.use('/api/users',      usersRouter);
 app.use('/api/job-cards',  jobCardsRouter);
 app.use('/api/options',    optionsRouter);

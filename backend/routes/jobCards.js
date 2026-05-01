@@ -23,7 +23,7 @@ function handleValidation(req, res) {
 router.get('/dashboard', async (req, res) => {
   try {
     const isTech = req.user.role === 'technician';
-    let allQ = supabase.from('job_cards').select('status, created_at');
+    let allQ = supabase.from('job_cards').select('status, created_at').eq('org_id', req.user.org_id);
     if (isTech) allQ = allQ.eq('technician', req.user.name);
     const { data: all, error } = await allQ;
     if (error) throw error;
@@ -50,6 +50,7 @@ router.get('/dashboard', async (req, res) => {
     }
 
     let todayQ = supabase.from('job_cards').select('*')
+      .eq('org_id', req.user.org_id)
       .gte('created_at', `${today}T00:00:00.000Z`)
       .lte('created_at', `${today}T23:59:59.999Z`)
       .order('created_at', { ascending: false });
@@ -71,7 +72,7 @@ router.get('/', async (req, res) => {
   try {
     const { status, date, technician, search, brand } = req.query;
 
-    let q = supabase.from('job_cards').select('*');
+    let q = supabase.from('job_cards').select('*').eq('org_id', req.user.org_id);
 
     if (req.user.role === 'technician') q = q.eq('technician', req.user.name);
     if (status)     q = q.eq('status', status);
@@ -101,7 +102,7 @@ router.get('/', async (req, res) => {
 router.get('/ready', async (req, res) => {
   try {
     const { search } = req.query;
-    let q = supabase.from('job_cards').select('*').eq('status', 'Ready for Delivery');
+    let q = supabase.from('job_cards').select('*').eq('org_id', req.user.org_id).eq('status', 'Ready for Delivery');
     if (req.user.role === 'technician') q = q.eq('technician', req.user.name);
     if (search) {
       q = q.or(`job_card_id.ilike.%${search}%,phone_model.ilike.%${search}%,customer_phone.ilike.%${search}%`);
@@ -121,7 +122,7 @@ router.get('/ready', async (req, res) => {
 router.get('/delivered', async (req, res) => {
   try {
     const { search } = req.query;
-    let q = supabase.from('job_cards').select('*').eq('status', 'Delivered');
+    let q = supabase.from('job_cards').select('*').eq('org_id', req.user.org_id).eq('status', 'Delivered');
     if (req.user.role === 'technician') q = q.eq('technician', req.user.name);
     if (search) {
       q = q.or(`job_card_id.ilike.%${search}%,phone_model.ilike.%${search}%,customer_phone.ilike.%${search}%`);
@@ -144,6 +145,7 @@ router.get('/:id', async (req, res) => {
       .from('job_cards')
       .select('*')
       .eq('job_card_id', req.params.id)
+      .eq('org_id', req.user.org_id)
       .single();
     if (error) return res.status(404).json({ error: 'Job card not found' });
 
@@ -205,6 +207,7 @@ router.post('/',
         .from('job_cards')
         .insert({
           job_card_id:       idData,
+          org_id:            req.user.org_id,
           salutation:        b.salutation        || null,
           customer_name:     b.customer_name,
           customer_email:    b.customer_email    || null,
@@ -274,6 +277,7 @@ router.patch('/:id',
         .from('job_cards')
         .select('*')
         .eq('job_card_id', req.params.id)
+        .eq('org_id', req.user.org_id)
         .single();
       if (fetchErr) return res.status(404).json({ error: 'Job card not found' });
 
@@ -300,6 +304,7 @@ router.patch('/:id',
         .from('job_cards')
         .update(updates)
         .eq('job_card_id', req.params.id)
+        .eq('org_id', req.user.org_id)
         .select()
         .single();
       if (error) throw error;

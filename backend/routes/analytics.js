@@ -21,7 +21,8 @@ router.get('/revenue', async (req, res) => {
 
     let q = supabase
       .from('job_cards')
-      .select('status, estimated_amount, advance_amount, created_at, delivered_at');
+      .select('status, estimated_amount, advance_amount, created_at, delivered_at')
+      .eq('org_id', req.user.org_id);
 
     if (from) q = q.gte('created_at', `${from}T00:00:00.000Z`);
     if (to)   q = q.lte('created_at', `${to}T23:59:59.999Z`);
@@ -79,7 +80,8 @@ router.get('/technicians', async (req, res) => {
 
     let q = supabase
       .from('job_cards')
-      .select('technician, status, estimated_amount, created_at, delivered_at');
+      .select('technician, status, estimated_amount, created_at, delivered_at')
+      .eq('org_id', req.user.org_id);
 
     if (from) q = q.gte('created_at', `${from}T00:00:00.000Z`);
     if (to)   q = q.lte('created_at', `${to}T23:59:59.999Z`);

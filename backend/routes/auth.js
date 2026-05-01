@@ -16,18 +16,20 @@ router.post('/login', async (req, res) => {
 
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('name, role, theme')
+      .select('name, role, theme, org_id, organizations(name)')
       .eq('id', data.user.id)
       .single();
 
     res.json({
       token: data.session.access_token,
       user: {
-        id:    data.user.id,
-        email: data.user.email,
-        name:  profile?.name  || data.user.email,
-        role:  profile?.role  || 'technician',
-        theme: profile?.theme || 'dark',
+        id:       data.user.id,
+        email:    data.user.email,
+        name:     profile?.name              || data.user.email,
+        role:     profile?.role              || 'technician',
+        theme:    profile?.theme             || 'dark',
+        org_id:   profile?.org_id            || null,
+        org_name: profile?.organizations?.name || null,
       },
     });
   } catch (err) {
@@ -46,14 +48,22 @@ router.post('/guest', async (req, res) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: 'Guest login failed' });
 
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('org_id, organizations(name)')
+      .eq('id', data.user.id)
+      .single();
+
     res.json({
       token: data.session.access_token,
       user: {
-        id:    data.user.id,
-        email: data.user.email,
-        name:  'Guest',
-        role:  'guest',
-        theme: 'dark',
+        id:       data.user.id,
+        email:    data.user.email,
+        name:     'Guest',
+        role:     'guest',
+        theme:    'dark',
+        org_id:   profile?.org_id            || null,
+        org_name: profile?.organizations?.name || null,
       },
     });
   } catch (err) {

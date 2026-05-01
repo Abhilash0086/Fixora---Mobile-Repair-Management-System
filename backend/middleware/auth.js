@@ -12,16 +12,18 @@ async function authenticate(req, res, next) {
 
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('name, role, theme')
+      .select('name, role, theme, org_id, organizations(name)')
       .eq('id', user.id)
       .single();
 
     req.user = {
-      id:    user.id,
-      email: user.email,
-      name:  profile?.name  || user.email,
-      role:  profile?.role  || 'technician',
-      theme: profile?.theme || 'dark',
+      id:       user.id,
+      email:    user.email,
+      name:     profile?.name              || user.email,
+      role:     profile?.role              || 'technician',
+      theme:    profile?.theme             || 'dark',
+      org_id:   profile?.org_id            || null,
+      org_name: profile?.organizations?.name || null,
     };
     next();
   } catch {

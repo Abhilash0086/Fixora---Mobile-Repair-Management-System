@@ -12,7 +12,7 @@ router.use(authenticate);
 // ──────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    let q = supabase.from('enquiries').select('*').order('created_at', { ascending: false });
+    let q = supabase.from('enquiries').select('*').eq('org_id', req.user.org_id).order('created_at', { ascending: false });
     if (req.query.today === 'true') {
       const today = new Date().toISOString().slice(0, 10);
       q = q
@@ -45,6 +45,7 @@ router.post('/',
         .from('enquiries')
         .insert({
           name,
+          org_id:      req.user.org_id,
           contact_no:  contact_no  || null,
           device:      device      || null,
           description: description || null,
@@ -67,7 +68,8 @@ router.delete('/:id', blockGuest, async (req, res) => {
     const { error } = await supabase
       .from('enquiries')
       .delete()
-      .eq('id', req.params.id);
+      .eq('id', req.params.id)
+      .eq('org_id', req.user.org_id);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {

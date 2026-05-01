@@ -55,7 +55,7 @@ export function Sidebar({ theme, toggleTheme, sidebarOpen, closeSidebar }) {
     <aside className={`sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>
       <div className="sidebar-logo">
         <div className="brand">Fixora</div>
-        <div className="tagline">Repair Management</div>
+        <div className="tagline">{user?.org_name || 'Repair Management'}</div>
       </div>
 
       <nav className="sidebar-nav">
