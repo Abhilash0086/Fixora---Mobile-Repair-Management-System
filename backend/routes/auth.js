@@ -6,21 +6,22 @@ const router = express.Router();
 
 // Helper: fetch profile + org name as two separate queries
 async function getProfileAndOrg(userId) {
-  const { data: profile } = await supabase
+  const { data: rows } = await supabase
     .from('user_profiles')
     .select('name, role, theme, org_id')
     .eq('id', userId)
-    .single();
+    .limit(1);
 
+  const profile = rows?.[0] ?? null;
   if (!profile) return { profile: null, orgName: null };
 
-  const { data: org } = await supabase
+  const { data: orgRows } = await supabase
     .from('organizations')
     .select('name')
     .eq('id', profile.org_id)
-    .single();
+    .limit(1);
 
-  return { profile, orgName: org?.name || null };
+  return { profile, orgName: orgRows?.[0]?.name || null };
 }
 
 // POST /api/auth/login

@@ -36,13 +36,13 @@ async function authenticate(req, res, next) {
     }
 
     // ── Normal users ────────────────────────────────────────────────
-    const { data: profile, error: profileErr } = await supabase
+    const { data: rows, error: profileErr } = await supabase
       .from('user_profiles')
       .select('name, role, theme, org_id')
       .eq('id', user.id)
-      .single();
+      .limit(1);
 
-    console.log('[Auth] user.id:', user.id, '| profileErr:', profileErr?.message, '| profile:', JSON.stringify(profile));
+    const profile = rows?.[0] ?? null;
 
     if (profileErr || !profile) {
       return res.status(401).json({ error: 'Profile not found' });
@@ -51,11 +51,12 @@ async function authenticate(req, res, next) {
       return res.status(401).json({ error: 'Account not linked to an organisation. Please contact your administrator.' });
     }
 
-    const { data: org } = await supabase
+    const { data: orgRows } = await supabase
       .from('organizations')
       .select('name')
       .eq('id', profile.org_id)
-      .single();
+      .limit(1);
+    const org = orgRows?.[0] ?? null;
 
     req.user = {
       id:       user.id,
