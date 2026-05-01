@@ -10,7 +10,32 @@ async function authenticate(req, res, next) {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) return res.status(401).json({ error: 'Invalid token' });
 
-    // Fetch profile (no join — separate query for org name)
+    // ── Guest shortcut ──────────────────────────────────────────────
+    // Bypass user_profiles entirely for the guest account.
+    // Uses GUEST_EMAIL + GUEST_ORG_ID env vars so no DB row is needed.
+    if (process.env.GUEST_EMAIL && user.email === process.env.GUEST_EMAIL) {
+      const orgId = process.env.GUEST_ORG_ID;
+      if (!orgId) return res.status(401).json({ error: 'Guest not configured' });
+
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('name')
+        .eq('id', orgId)
+        .single();
+
+      req.user = {
+        id:       user.id,
+        email:    user.email,
+        name:     'Guest',
+        role:     'guest',
+        theme:    'dark',
+        org_id:   orgId,
+        org_name: org?.name || null,
+      };
+      return next();
+    }
+
+    // ── Normal users ────────────────────────────────────────────────
     const { data: profile, error: profileErr } = await supabase
       .from('user_profiles')
       .select('name, role, theme, org_id')
@@ -24,7 +49,6 @@ async function authenticate(req, res, next) {
       return res.status(401).json({ error: 'Account not linked to an organisation. Please contact your administrator.' });
     }
 
-    // Fetch org name separately
     const { data: org } = await supabase
       .from('organizations')
       .select('name')

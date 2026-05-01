@@ -53,39 +53,24 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/guest
+// Uses GUEST_EMAIL, GUEST_PASS, GUEST_ORG_ID env vars.
+// Does NOT query user_profiles — avoids RLS / session-caching issues.
 router.post('/guest', async (req, res) => {
   const email    = process.env.GUEST_EMAIL;
   const password = process.env.GUEST_PASS;
-  if (!email || !password) {
+  const orgId    = process.env.GUEST_ORG_ID;
+
+  if (!email || !password || !orgId) {
     return res.status(503).json({ error: 'Guest mode is not configured' });
   }
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: 'Guest login failed' });
 
-    // Fetch only org_id — guest name/role/theme are hardcoded below
-    // Use array (no .single()) to avoid 406 if duplicate rows exist
-    const { data: rows, error: profileErr } = await supabase
-      .from('user_profiles')
-      .select('org_id')
-      .eq('id', data.user.id);
-
-    if (profileErr) {
-      console.error('[guest] profile query error:', profileErr.message, '| uid:', data.user.id);
-      return res.status(503).json({ error: 'Could not load guest profile' });
-    }
-
-    // Prefer the row that has org_id set (guards against duplicate null rows)
-    const profile = rows?.find(r => r.org_id) ?? rows?.[0];
-    if (!profile?.org_id) {
-      console.error('[guest] org_id missing | rows:', rows?.length, '| uid:', data.user.id);
-      return res.status(503).json({ error: 'Demo account is not linked to an organisation. Please contact the administrator.' });
-    }
-
     const { data: org } = await supabase
       .from('organizations')
       .select('name')
-      .eq('id', profile.org_id)
+      .eq('id', orgId)
       .single();
 
     res.json({
@@ -96,7 +81,7 @@ router.post('/guest', async (req, res) => {
         name:     'Guest',
         role:     'guest',
         theme:    'dark',
-        org_id:   profile.org_id,
+        org_id:   orgId,
         org_name: org?.name || null,
       },
     });
