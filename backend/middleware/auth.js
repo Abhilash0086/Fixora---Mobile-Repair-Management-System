@@ -10,27 +10,39 @@ async function authenticate(req, res, next) {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) return res.status(401).json({ error: 'Invalid token' });
 
-    const { data: profile } = await supabase
+    // Fetch profile (no join — separate query for org name)
+    const { data: profile, error: profileErr } = await supabase
       .from('user_profiles')
-      .select('name, role, theme, org_id, organizations(name)')
+      .select('name, role, theme, org_id')
       .eq('id', user.id)
       .single();
 
-    if (!profile?.org_id) {
+    if (profileErr || !profile) {
+      return res.status(401).json({ error: 'Profile not found' });
+    }
+    if (!profile.org_id) {
       return res.status(401).json({ error: 'Account not linked to an organisation. Please contact your administrator.' });
     }
+
+    // Fetch org name separately
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('id', profile.org_id)
+      .single();
 
     req.user = {
       id:       user.id,
       email:    user.email,
-      name:     profile?.name              || user.email,
-      role:     profile?.role              || 'technician',
-      theme:    profile?.theme             || 'dark',
+      name:     profile.name  || user.email,
+      role:     profile.role  || 'technician',
+      theme:    profile.theme || 'dark',
       org_id:   profile.org_id,
-      org_name: profile?.organizations?.name || null,
+      org_name: org?.name     || null,
     };
     next();
-  } catch {
+  } catch (err) {
+    console.error('Auth error:', err.message);
     res.status(401).json({ error: 'Auth failed' });
   }
 }

@@ -4,6 +4,25 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Helper: fetch profile + org name as two separate queries
+async function getProfileAndOrg(userId) {
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('name, role, theme, org_id')
+    .eq('id', userId)
+    .single();
+
+  if (!profile) return { profile: null, orgName: null };
+
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name')
+    .eq('id', profile.org_id)
+    .single();
+
+  return { profile, orgName: org?.name || null };
+}
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -14,22 +33,18 @@ router.post('/login', async (req, res) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: 'Invalid email or password' });
 
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('name, role, theme, org_id, organizations(name)')
-      .eq('id', data.user.id)
-      .single();
+    const { profile, orgName } = await getProfileAndOrg(data.user.id);
 
     res.json({
       token: data.session.access_token,
       user: {
         id:       data.user.id,
         email:    data.user.email,
-        name:     profile?.name              || data.user.email,
-        role:     profile?.role              || 'technician',
-        theme:    profile?.theme             || 'dark',
-        org_id:   profile?.org_id            || null,
-        org_name: profile?.organizations?.name || null,
+        name:     profile?.name  || data.user.email,
+        role:     profile?.role  || 'technician',
+        theme:    profile?.theme || 'dark',
+        org_id:   profile?.org_id || null,
+        org_name: orgName,
       },
     });
   } catch (err) {
@@ -48,11 +63,7 @@ router.post('/guest', async (req, res) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: 'Guest login failed' });
 
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('org_id, organizations(name)')
-      .eq('id', data.user.id)
-      .single();
+    const { profile, orgName } = await getProfileAndOrg(data.user.id);
 
     res.json({
       token: data.session.access_token,
@@ -62,8 +73,8 @@ router.post('/guest', async (req, res) => {
         name:     'Guest',
         role:     'guest',
         theme:    'dark',
-        org_id:   profile?.org_id            || null,
-        org_name: profile?.organizations?.name || null,
+        org_id:   profile?.org_id || null,
+        org_name: orgName,
       },
     });
   } catch (err) {
