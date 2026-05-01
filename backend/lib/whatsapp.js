@@ -1,22 +1,34 @@
 /**
- * WhatsApp Notification Module — Meta Cloud API
+ * WhatsApp Notification Module — supports Meta Cloud API OR Twilio Sandbox/Production
  *
- * Required env vars (add to Vercel when ready):
- *   WHATSAPP_PHONE_NUMBER_ID   — Meta Business > WhatsApp > API Setup
- *   WHATSAPP_ACCESS_TOKEN      — System user permanent token (or temp token for testing)
- *   APP_URL                    — e.g. https://fixora-repair-management-system.vercel.app
- *   SHOP_NAME                  — e.g. "ABC Mobile Repairs"
+ * Provider is selected automatically based on which env vars are present:
  *
- * Without WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN the function
- * logs the message to console + whatsapp_log table (stub mode).
- * Set both env vars to go live — no code change needed.
+ *   Twilio (sandbox or production):
+ *     TWILIO_ACCOUNT_SID      — Twilio Console → Dashboard
+ *     TWILIO_AUTH_TOKEN       — Twilio Console → Dashboard
+ *     TWILIO_WHATSAPP_FROM    — e.g. "+14155238886" (sandbox) or your dedicated number
  *
- * ⚠  PRODUCTION NOTE:
+ *   Meta Cloud API (production):
+ *     WHATSAPP_PHONE_NUMBER_ID — Meta Business > WhatsApp > API Setup
+ *     WHATSAPP_ACCESS_TOKEN    — System user permanent token
+ *
+ *   Stub mode (no credentials set):
+ *     Logs to console + whatsapp_log table only. No real message sent.
+ *
+ * Other env vars:
+ *   APP_URL   — e.g. https://fixora-repair-management-system.vercel.app
+ *   SHOP_NAME — e.g. "ABC Mobile Repairs"
+ *
+ * ⚠  PRODUCTION NOTE (Meta):
  *   Free-form text messages only work if the customer messaged your
  *   WhatsApp number first within the last 24 hours.
- *   For true outbound notifications (cold send), submit template messages
- *   to Meta for approval. See TEMPLATE SETUP section at the bottom of
- *   this file for the exact template bodies to submit.
+ *   For true outbound cold sends, submit template messages to Meta for
+ *   approval. See TEMPLATE SETUP section at the bottom of this file.
+ *
+ * ⚠  TWILIO SANDBOX NOTE:
+ *   Recipients must first send "join <word>" to your sandbox number before
+ *   they can receive messages. Sandbox is for testing only.
+ *   For production, use a dedicated Twilio number (no opt-in required).
  */
 
 const supabase = require('./supabase');
@@ -104,33 +116,52 @@ function buildMessage(status, jobCard) {
   }
 }
 
-// ── Main export ─────────────────────────────────────────────────────
-async function sendWhatsAppNotification(jobCard, newStatus) {
-  const phone   = formatPhone(jobCard.customer_phone);
-  const message = buildMessage(newStatus, jobCard);
+// ── Twilio send ──────────────────────────────────────────────────────
+async function sendViaTwilio(phone, message, jobCardId, newStatus) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken  = process.env.TWILIO_AUTH_TOKEN;
+  const fromRaw    = process.env.TWILIO_WHATSAPP_FROM || '';
+  const from       = fromRaw.startsWith('whatsapp:') ? fromRaw : `whatsapp:+${fromRaw.replace(/\D/g, '')}`;
+  const to         = `whatsapp:+${phone}`;
 
-  if (!phone) {
-    console.log(`[WhatsApp] Skipped — no phone for ${jobCard.job_card_id}`);
-    await log(jobCard.job_card_id, null, message, 'skipped', 'No phone number');
-    return;
+  const body = new URLSearchParams({
+    From: from,
+    To:   to,
+    Body: message,
+  });
+
+  try {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
+        },
+        body: body.toString(),
+      }
+    );
+
+    const result = await res.json();
+    if (!res.ok) {
+      throw new Error(result.message || JSON.stringify(result));
+    }
+
+    console.log(`[WhatsApp/Twilio] ✓ Sent to ${phone} — ${jobCardId} [${newStatus}]`);
+    await log(jobCardId, phone, message, 'sent', null);
+
+  } catch (err) {
+    console.error(`[WhatsApp/Twilio] ✗ Failed for ${jobCardId}:`, err.message);
+    await log(jobCardId, phone, message, 'failed', err.message);
   }
+}
 
-  if (!message) {
-    // No template defined for this status — silent skip
-    return;
-  }
-
+// ── Meta Cloud API send ──────────────────────────────────────────────
+async function sendViaMeta(phone, message, jobCardId, newStatus) {
   const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const ACCESS_TOKEN    = process.env.WHATSAPP_ACCESS_TOKEN;
 
-  // ── Stub mode (credentials not set) ────────────────────────────
-  if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-    console.log(`[WhatsApp STUB] → ${phone}\n${message}\n`);
-    await log(jobCard.job_card_id, phone, message, 'pending', null);
-    return;
-  }
-
-  // ── Live send via Meta Cloud API ────────────────────────────────
   try {
     const res = await fetch(
       `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
@@ -154,13 +185,47 @@ async function sendWhatsAppNotification(jobCard, newStatus) {
       throw new Error(result.error?.message || JSON.stringify(result));
     }
 
-    console.log(`[WhatsApp] ✓ Sent to ${phone} — ${jobCard.job_card_id} [${newStatus}]`);
-    await log(jobCard.job_card_id, phone, message, 'sent', null);
+    console.log(`[WhatsApp/Meta] ✓ Sent to ${phone} — ${jobCardId} [${newStatus}]`);
+    await log(jobCardId, phone, message, 'sent', null);
 
   } catch (err) {
-    console.error(`[WhatsApp] ✗ Failed for ${jobCard.job_card_id}:`, err.message);
-    await log(jobCard.job_card_id, phone, message, 'failed', err.message);
+    console.error(`[WhatsApp/Meta] ✗ Failed for ${jobCardId}:`, err.message);
+    await log(jobCardId, phone, message, 'failed', err.message);
   }
+}
+
+// ── Main export ─────────────────────────────────────────────────────
+async function sendWhatsAppNotification(jobCard, newStatus) {
+  const phone   = formatPhone(jobCard.customer_phone);
+  const message = buildMessage(newStatus, jobCard);
+
+  if (!phone) {
+    console.log(`[WhatsApp] Skipped — no phone for ${jobCard.job_card_id}`);
+    await log(jobCard.job_card_id, null, message, 'skipped', 'No phone number');
+    return;
+  }
+
+  if (!message) {
+    // No template defined for this status — silent skip
+    return;
+  }
+
+  const hasTwilio = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_WHATSAPP_FROM;
+  const hasMeta   = process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN;
+
+  console.log(`[WhatsApp] SID=${!!process.env.TWILIO_ACCOUNT_SID} TOKEN=${!!process.env.TWILIO_AUTH_TOKEN} FROM=${!!process.env.TWILIO_WHATSAPP_FROM}`);
+
+  if (hasTwilio) {
+    return sendViaTwilio(phone, message, jobCard.job_card_id, newStatus);
+  }
+
+  if (hasMeta) {
+    return sendViaMeta(phone, message, jobCard.job_card_id, newStatus);
+  }
+
+  // ── Stub mode (no credentials) ──────────────────────────────────
+  console.log(`[WhatsApp STUB] → ${phone}\n${message}\n`);
+  await log(jobCard.job_card_id, phone, message, 'pending', null);
 }
 
 // ── Log to whatsapp_log table ───────────────────────────────────────
@@ -183,7 +248,7 @@ module.exports = { sendWhatsAppNotification };
 
 /*
  * ─────────────────────────────────────────────────────────────────────
- * TEMPLATE SETUP (for cold outbound messages without prior customer contact)
+ * TEMPLATE SETUP (for Meta cold outbound messages without prior customer contact)
  * ─────────────────────────────────────────────────────────────────────
  * Submit these at: Meta Business Suite > WhatsApp Manager > Message Templates
  *
