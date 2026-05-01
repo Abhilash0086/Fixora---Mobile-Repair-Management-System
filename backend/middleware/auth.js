@@ -42,6 +42,8 @@ async function authenticate(req, res, next) {
       .eq('id', user.id)
       .single();
 
+    console.log('[Auth] user.id:', user.id, '| profileErr:', profileErr?.message, '| profile:', JSON.stringify(profile));
+
     if (profileErr || !profile) {
       return res.status(401).json({ error: 'Profile not found' });
     }
