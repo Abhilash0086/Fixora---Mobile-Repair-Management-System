@@ -16,13 +16,17 @@ async function authenticate(req, res, next) {
       .eq('id', user.id)
       .single();
 
+    if (!profile?.org_id) {
+      return res.status(401).json({ error: 'Account not linked to an organisation. Please contact your administrator.' });
+    }
+
     req.user = {
       id:       user.id,
       email:    user.email,
       name:     profile?.name              || user.email,
       role:     profile?.role              || 'technician',
       theme:    profile?.theme             || 'dark',
-      org_id:   profile?.org_id            || null,
+      org_id:   profile.org_id,
       org_name: profile?.organizations?.name || null,
     };
     next();
