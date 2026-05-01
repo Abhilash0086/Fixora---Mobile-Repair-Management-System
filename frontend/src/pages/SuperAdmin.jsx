@@ -22,6 +22,8 @@ export default function SuperAdmin() {
 
   const [orgs, setOrgs]           = useState([]);
   const [loading, setLoading]     = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [keyError, setKeyError]   = useState('');
   const [form, setForm]           = useState(ORG_INIT);
   const [saving, setSaving]       = useState(false);
   const [confirm, setConfirm]     = useState(null); // { id, name }
@@ -43,19 +45,29 @@ export default function SuperAdmin() {
       setOrgs(data);
     } catch (err) {
       toast(err.message, 'error');
-      if (err.message.toLowerCase().includes('forbidden')) handleLock();
     } finally {
       setLoading(false);
     }
   }
 
-  function handleUnlock(e) {
+  async function handleUnlock(e) {
     e.preventDefault();
     const k = keyInput.trim();
     if (!k) return;
-    sessionStorage.setItem(SESSION_KEY, k);
-    setAdminKey(k);
-    setUnlocked(true);
+    setUnlocking(true);
+    setKeyError('');
+    try {
+      // Verify the key works before unlocking
+      const data = await api.listOrgs(k);
+      sessionStorage.setItem(SESSION_KEY, k);
+      setAdminKey(k);
+      setOrgs(data);
+      setUnlocked(true);
+    } catch (err) {
+      setKeyError('Invalid admin key. Please try again.');
+    } finally {
+      setUnlocking(false);
+    }
   }
 
   function handleLock() {
@@ -128,10 +140,10 @@ export default function SuperAdmin() {
               <input
                 type={showKey ? 'text' : 'password'}
                 value={keyInput}
-                onChange={e => setKeyInput(e.target.value)}
+                onChange={e => { setKeyInput(e.target.value); setKeyError(''); }}
                 placeholder="••••••••••••••••"
                 autoFocus
-                style={{ paddingRight: 40 }}
+                style={{ paddingRight: 40, borderColor: keyError ? 'var(--s-returned)' : undefined }}
               />
               <button
                 type="button"
@@ -145,8 +157,13 @@ export default function SuperAdmin() {
                 {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 8 }}>
-              Unlock
+            {keyError && (
+              <div style={{ fontSize: 12, color: 'var(--s-returned)', marginTop: 4 }}>
+                {keyError}
+              </div>
+            )}
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 12 }} disabled={unlocking}>
+              {unlocking ? 'Verifying…' : 'Unlock'}
             </button>
           </form>
         </div>
