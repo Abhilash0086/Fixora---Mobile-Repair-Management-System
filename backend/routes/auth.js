@@ -64,18 +64,20 @@ router.post('/guest', async (req, res) => {
     if (error) return res.status(401).json({ error: 'Guest login failed' });
 
     // Fetch only org_id — guest name/role/theme are hardcoded below
-    const { data: profile, error: profileErr } = await supabase
+    // Use array (no .single()) to avoid 406 if duplicate rows exist
+    const { data: rows, error: profileErr } = await supabase
       .from('user_profiles')
       .select('org_id')
-      .eq('id', data.user.id)
-      .single();
+      .eq('id', data.user.id);
 
     if (profileErr) {
       console.error('[guest] profile query error:', profileErr.message, '| uid:', data.user.id);
       return res.status(503).json({ error: 'Could not load guest profile' });
     }
+
+    const profile = rows?.[0];
     if (!profile?.org_id) {
-      console.error('[guest] org_id is null | uid:', data.user.id);
+      console.error('[guest] org_id missing | rows:', rows?.length, '| uid:', data.user.id);
       return res.status(503).json({ error: 'Demo account is not linked to an organisation. Please contact the administrator.' });
     }
 
