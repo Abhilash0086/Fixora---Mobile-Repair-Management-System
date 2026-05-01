@@ -63,11 +63,27 @@ router.post('/guest', async (req, res) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: 'Guest login failed' });
 
-    const { profile, orgName } = await getProfileAndOrg(data.user.id);
+    // Fetch only org_id — guest name/role/theme are hardcoded below
+    const { data: profile, error: profileErr } = await supabase
+      .from('user_profiles')
+      .select('org_id')
+      .eq('id', data.user.id)
+      .single();
 
+    if (profileErr) {
+      console.error('[guest] profile query error:', profileErr.message, '| uid:', data.user.id);
+      return res.status(503).json({ error: 'Could not load guest profile' });
+    }
     if (!profile?.org_id) {
+      console.error('[guest] org_id is null | uid:', data.user.id);
       return res.status(503).json({ error: 'Demo account is not linked to an organisation. Please contact the administrator.' });
     }
+
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('id', profile.org_id)
+      .single();
 
     res.json({
       token: data.session.access_token,
@@ -78,10 +94,11 @@ router.post('/guest', async (req, res) => {
         role:     'guest',
         theme:    'dark',
         org_id:   profile.org_id,
-        org_name: orgName,
+        org_name: org?.name || null,
       },
     });
   } catch (err) {
+    console.error('[guest] unexpected error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
