@@ -75,7 +75,8 @@ router.post('/guest', async (req, res) => {
       return res.status(503).json({ error: 'Could not load guest profile' });
     }
 
-    const profile = rows?.[0];
+    // Prefer the row that has org_id set (guards against duplicate null rows)
+    const profile = rows?.find(r => r.org_id) ?? rows?.[0];
     if (!profile?.org_id) {
       console.error('[guest] org_id missing | rows:', rows?.length, '| uid:', data.user.id);
       return res.status(503).json({ error: 'Demo account is not linked to an organisation. Please contact the administrator.' });
