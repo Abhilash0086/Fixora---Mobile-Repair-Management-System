@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { toast, ToastArea } from '../components/Common';
 import {
   ClipboardList, Users, Link2, Mail, BarChart2, Printer,
   CheckCircle, ArrowRight, Wrench, Clock, PackageCheck,
@@ -84,7 +85,8 @@ export default function Landing() {
     try {
       await guestLogin();
       navigate('/dashboard', { replace: true });
-    } catch {
+    } catch (err) {
+      toast(err.message || 'Demo unavailable — please try again later', 'error');
       setDemoLoading(false);
     }
   }
@@ -299,6 +301,7 @@ export default function Landing() {
         </div>
       </footer>
 
+      <ToastArea />
     </div>
   );
 }

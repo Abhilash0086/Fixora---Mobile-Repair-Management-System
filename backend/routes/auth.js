@@ -65,6 +65,10 @@ router.post('/guest', async (req, res) => {
 
     const { profile, orgName } = await getProfileAndOrg(data.user.id);
 
+    if (!profile?.org_id) {
+      return res.status(503).json({ error: 'Demo account is not linked to an organisation. Please contact the administrator.' });
+    }
+
     res.json({
       token: data.session.access_token,
       user: {
@@ -73,7 +77,7 @@ router.post('/guest', async (req, res) => {
         name:     'Guest',
         role:     'guest',
         theme:    'dark',
-        org_id:   profile?.org_id || null,
+        org_id:   profile.org_id,
         org_name: orgName,
       },
     });
