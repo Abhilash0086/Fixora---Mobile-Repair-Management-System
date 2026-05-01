@@ -1,4 +1,5 @@
-const supabase = require('../lib/supabase');
+const supabase     = require('../lib/supabase');
+const supabaseAuth = require('../lib/supabaseAuth');
 
 async function authenticate(req, res, next) {
   const header = req.headers.authorization;
@@ -8,7 +9,7 @@ async function authenticate(req, res, next) {
   }
   const token = header.slice(7);
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
     if (error || !user) {
       console.log('[Auth] 401 — invalid token', req.path, error?.message);
       return res.status(401).json({ error: 'Invalid token' });

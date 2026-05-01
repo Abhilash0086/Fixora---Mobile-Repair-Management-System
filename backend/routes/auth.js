@@ -1,5 +1,6 @@
-const express = require('express');
-const supabase = require('../lib/supabase');
+const express      = require('express');
+const supabase     = require('../lib/supabase');      // DB queries only
+const supabaseAuth = require('../lib/supabaseAuth');  // auth operations only
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -31,7 +32,7 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: 'Invalid email or password' });
 
     const { profile, orgName } = await getProfileAndOrg(data.user.id);
@@ -65,7 +66,7 @@ router.post('/guest', async (req, res) => {
     return res.status(503).json({ error: 'Guest mode is not configured' });
   }
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: 'Guest login failed' });
 
     const { data: org } = await supabase
