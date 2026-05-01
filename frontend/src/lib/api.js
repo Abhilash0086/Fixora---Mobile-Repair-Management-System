@@ -4,6 +4,19 @@ function getToken() {
   return localStorage.getItem('fx_token');
 }
 
+// Super-admin calls — use X-Admin-Key instead of Bearer token
+async function reqAdmin(method, path, body, adminKey) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`${BASE}${path}`, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
 async function req(method, path, body) {
   const token = getToken();
   const opts = {
@@ -70,6 +83,11 @@ export const api = {
   getEnquiries:   (today) => req('GET',    `/enquiries${today ? '?today=true' : ''}`),
   createEnquiry:  (data)  => req('POST',   '/enquiries', data),
   deleteEnquiry:  (id)    => req('DELETE', `/enquiries/${id}`),
+
+  // Super admin — org management (X-Admin-Key, no bearer token)
+  listOrgs:  (key)        => reqAdmin('GET',    '/orgs',       null, key),
+  createOrg: (key, data)  => reqAdmin('POST',   '/orgs',       data, key),
+  deleteOrg: (key, id)    => reqAdmin('DELETE', `/orgs/${id}`, null, key),
 
   // Analytics (admin only)
   getRevenue: (params = {}) => {
