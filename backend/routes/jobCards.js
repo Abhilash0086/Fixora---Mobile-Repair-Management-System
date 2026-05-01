@@ -292,8 +292,16 @@ router.patch('/:id',
             'reported_issue', 'data_backup',
             'estimated_amount', 'advance_amount', 'confirm_estimated', 'prepared_by',
           ];
+      const numericFields = ['estimated_amount', 'advance_amount'];
       for (const key of allowed) {
-        if (req.body[key] !== undefined) updates[key] = req.body[key];
+        if (req.body[key] === undefined) continue;
+        const val = req.body[key];
+        // Convert empty strings to null for numeric DB columns
+        if (numericFields.includes(key)) {
+          updates[key] = val === '' || val === null ? null : parseFloat(val);
+        } else {
+          updates[key] = val === '' ? null : val;
+        }
       }
 
       if (updates.status === 'Delivered' && existing.status !== 'Delivered') {
