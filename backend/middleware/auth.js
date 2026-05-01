@@ -3,25 +3,30 @@ const supabase = require('../lib/supabase');
 async function authenticate(req, res, next) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
+    console.log('[Auth] 401 — missing token', req.path);
     return res.status(401).json({ error: 'Missing token' });
   }
   const token = header.slice(7);
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return res.status(401).json({ error: 'Invalid token' });
+    if (error || !user) {
+      console.log('[Auth] 401 — invalid token', req.path, error?.message);
+      return res.status(401).json({ error: 'Invalid token' });
+    }
 
     // ── Guest shortcut ──────────────────────────────────────────────
-    // Bypass user_profiles entirely for the guest account.
-    // Uses GUEST_EMAIL + GUEST_ORG_ID env vars so no DB row is needed.
     if (process.env.GUEST_EMAIL && user.email === process.env.GUEST_EMAIL) {
       const orgId = process.env.GUEST_ORG_ID;
-      if (!orgId) return res.status(401).json({ error: 'Guest not configured' });
+      if (!orgId) {
+        console.log('[Auth] 401 — guest not configured', req.path);
+        return res.status(401).json({ error: 'Guest not configured' });
+      }
 
-      const { data: org } = await supabase
+      const { data: orgRows } = await supabase
         .from('organizations')
         .select('name')
         .eq('id', orgId)
-        .single();
+        .limit(1);
 
       req.user = {
         id:       user.id,
@@ -30,7 +35,7 @@ async function authenticate(req, res, next) {
         role:     'guest',
         theme:    'dark',
         org_id:   orgId,
-        org_name: org?.name || null,
+        org_name: orgRows?.[0]?.name || null,
       };
       return next();
     }
@@ -44,10 +49,14 @@ async function authenticate(req, res, next) {
 
     const profile = rows?.[0] ?? null;
 
+    console.log('[Auth]', req.path, '| user:', user.id, '| profileErr:', profileErr?.message, '| profile:', JSON.stringify(profile));
+
     if (profileErr || !profile) {
+      console.log('[Auth] 401 — profile not found', req.path, profileErr?.message);
       return res.status(401).json({ error: 'Profile not found' });
     }
     if (!profile.org_id) {
+      console.log('[Auth] 401 — no org_id', req.path);
       return res.status(401).json({ error: 'Account not linked to an organisation. Please contact your administrator.' });
     }
 
@@ -69,7 +78,7 @@ async function authenticate(req, res, next) {
     };
     next();
   } catch (err) {
-    console.error('Auth error:', err.message);
+    console.error('[Auth] 401 — exception', req.path, err.message);
     res.status(401).json({ error: 'Auth failed' });
   }
 }
