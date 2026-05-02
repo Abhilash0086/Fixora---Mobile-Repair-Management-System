@@ -70,7 +70,7 @@ router.get('/dashboard', async (req, res) => {
 // ──────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    const { status, date, technician, search, brand } = req.query;
+    const { status, date, date_from, date_to, technician, search, brand } = req.query;
 
     let q = supabase.from('job_cards').select('*').eq('org_id', req.user.org_id);
 
@@ -78,7 +78,12 @@ router.get('/', async (req, res) => {
     if (status)     q = q.eq('status', status);
     if (technician && req.user.role === 'admin') q = q.ilike('technician', `%${technician}%`);
     if (brand)      q = q.eq('phone_brand', brand);
-    if (date)       q = q.gte('created_at', `${date}T00:00:00.000Z`).lte('created_at', `${date}T23:59:59.999Z`);
+    // date range (takes priority over single date)
+    if (date_from)  q = q.gte('created_at', `${date_from}T00:00:00.000Z`);
+    if (date_to)    q = q.lte('created_at', `${date_to}T23:59:59.999Z`);
+    // legacy single date
+    if (date && !date_from && !date_to)
+      q = q.gte('created_at', `${date}T00:00:00.000Z`).lte('created_at', `${date}T23:59:59.999Z`);
 
     if (search) {
       q = q.or(

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Loading } from '../components/Common';
-import { TrendingUp, Users, IndianRupee, BarChart2 } from 'lucide-react';
+import { TrendingUp, Users, IndianRupee, BarChart2, Download } from 'lucide-react';
+import { exportCSV } from '../lib/csvExport';
 
 const PERIODS = [
   { label: 'This Week',     days: 7   },
@@ -122,8 +123,28 @@ export default function Analytics() {
           {revenue.monthly.length > 0 && (
             <>
               <div className="analytics-section-title" style={{ marginTop: 32 }}>
-                <TrendingUp size={15} />
-                Monthly Breakdown
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <TrendingUp size={15} />
+                  Monthly Breakdown
+                </div>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 'auto' }}
+                  onClick={() => {
+                    const rows = [...revenue.monthly].reverse().map(m => ({
+                      'Month':          new Date(m.month + '-02').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+                      'Jobs':           m.jobs,
+                      'Delivered':      m.delivered,
+                      'Estimated (₹)':  Math.round(m.estimated),
+                      'Advance (₹)':    Math.round(m.advance),
+                      'Completion %':   pct(m.delivered, m.jobs),
+                    }));
+                    exportCSV(rows, `monthly-breakdown_${PERIODS[periodIdx].label.replace(/\s+/g, '-').toLowerCase()}.csv`);
+                  }}
+                >
+                  <Download size={13} />
+                  CSV
+                </button>
               </div>
 
               <div className="table-wrap">
@@ -171,8 +192,34 @@ export default function Analytics() {
 
           {/* ── Technician Performance ── */}
           <div className="analytics-section-title" style={{ marginTop: 32 }}>
-            <Users size={15} />
-            Technician Performance
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+              <Users size={15} />
+              Technician Performance
+            </div>
+            {technicians.length > 0 && (
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 'auto' }}
+                onClick={() => {
+                  const rows = technicians.map(t => ({
+                    'Technician':      t.name,
+                    'Total':           t.total,
+                    'Delivered':       t.delivered,
+                    'In Progress':     t.in_progress,
+                    'Pending':         t.pending,
+                    'Ready':           t.ready_for_delivery,
+                    'Delayed':         t.delayed,
+                    'Avg Days':        t.avg_turnaround_days ?? '',
+                    'Estimated (₹)':   t.total_estimated,
+                    'Completion %':    t.completion_rate,
+                  }));
+                  exportCSV(rows, `technicians_${PERIODS[periodIdx].label.replace(/\s+/g, '-').toLowerCase()}.csv`);
+                }}
+              >
+                <Download size={13} />
+                CSV
+              </button>
+            )}
           </div>
 
           {technicians.length === 0 ? (

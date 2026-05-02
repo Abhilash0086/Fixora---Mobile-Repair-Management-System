@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { Badge, Loading, Empty, StatusSelect, ConfirmModal, fmtDate, fmtDateTime, toast, useGuestGate, STATUSES } from '../components/Common';
 import { JobCardModal } from '../components/JobCardModal';
-import { Search as SearchIcon, Pencil, XCircle, Printer, SlidersHorizontal } from 'lucide-react';
+import { Search as SearchIcon, Pencil, XCircle, Printer, Download } from 'lucide-react';
 import { printJobCard } from '../lib/printJobCard';
+import { exportCSV } from '../lib/csvExport';
 
-const EMPTY_FILTERS = { status: '', search: '', date: '', technician: '', brand: '' };
+const EMPTY_FILTERS = { status: '', search: '', date_from: '', date_to: '', technician: '', brand: '' };
 
 export default function AllJobCards() {
   const [cards,       setCards]       = useState([]);
@@ -30,7 +31,8 @@ export default function AllJobCards() {
       const params = {};
       if (filters.status)     params.status     = filters.status;
       if (filters.search)     params.search     = filters.search;
-      if (filters.date)       params.date       = filters.date;
+      if (filters.date_from)  params.date_from  = filters.date_from;
+      if (filters.date_to)    params.date_to    = filters.date_to;
       if (filters.technician) params.technician = filters.technician;
       if (filters.brand)      params.brand      = filters.brand;
       const data = await api.listJobCards(params);
@@ -109,8 +111,38 @@ export default function AllJobCards() {
   return (
     <div className="page">
       <div className="page-header">
-        <div className="page-title">All Job Cards</div>
-        <div className="page-subtitle">{cards.length} record{cards.length !== 1 ? 's' : ''}</div>
+        <div>
+          <div className="page-title">All Job Cards</div>
+          <div className="page-subtitle">{cards.length} record{cards.length !== 1 ? 's' : ''}</div>
+        </div>
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          disabled={cards.length === 0}
+          onClick={() => {
+            const rows = cards.map(j => ({
+              'Job Card ID':     j.job_card_id,
+              'Customer Name':   j.customer_name,
+              'Customer Phone':  j.customer_phone,
+              'Brand':           j.phone_brand,
+              'Model':           j.phone_model,
+              'Issue':           j.reported_issue,
+              'Technician':      j.technician || '',
+              'Status':          j.status,
+              'ETA':             j.eta || '',
+              'Estimated (₹)':   j.estimated_amount ?? '',
+              'Advance (₹)':     j.advance_amount ?? '',
+              'Created':         j.created_at,
+            }));
+            const label = filters.date_from && filters.date_to
+              ? `${filters.date_from}_to_${filters.date_to}`
+              : new Date().toISOString().slice(0, 10);
+            exportCSV(rows, `job-cards_${label}.csv`);
+          }}
+        >
+          <Download size={14} />
+          Export CSV
+        </button>
       </div>
 
       {/* ── Filter bar ── */}
@@ -135,9 +167,18 @@ export default function AllJobCards() {
           </select>
           <input
             type="date"
-            value={filters.date}
-            onChange={e => setF('date', e.target.value)}
-            title="Filter by created date"
+            value={filters.date_from}
+            max={filters.date_to || undefined}
+            onChange={e => setF('date_from', e.target.value)}
+            title="From date"
+          />
+          <span style={{ fontSize: 12, color: 'var(--text-3)', alignSelf: 'center' }}>–</span>
+          <input
+            type="date"
+            value={filters.date_to}
+            min={filters.date_from || undefined}
+            onChange={e => setF('date_to', e.target.value)}
+            title="To date"
           />
           {hasFilters && (
             <button className="btn btn-ghost btn-sm" onClick={() => setFilters(EMPTY_FILTERS)}>

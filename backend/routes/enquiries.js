@@ -13,12 +13,17 @@ router.use(authenticate);
 router.get('/', async (req, res) => {
   try {
     let q = supabase.from('enquiries').select('*').eq('org_id', req.user.org_id).order('created_at', { ascending: false });
-    if (req.query.today === 'true') {
+
+    // date range: ?from=YYYY-MM-DD&to=YYYY-MM-DD
+    if (req.query.from) q = q.gte('created_at', `${req.query.from}T00:00:00.000Z`);
+    if (req.query.to)   q = q.lte('created_at', `${req.query.to}T23:59:59.999Z`);
+
+    // legacy: ?today=true (kept for backward compat)
+    if (req.query.today === 'true' && !req.query.from && !req.query.to) {
       const today = new Date().toISOString().slice(0, 10);
-      q = q
-        .gte('created_at', `${today}T00:00:00.000Z`)
-        .lte('created_at', `${today}T23:59:59.999Z`);
+      q = q.gte('created_at', `${today}T00:00:00.000Z`).lte('created_at', `${today}T23:59:59.999Z`);
     }
+
     const { data, error } = await q;
     if (error) throw error;
     res.json(data);

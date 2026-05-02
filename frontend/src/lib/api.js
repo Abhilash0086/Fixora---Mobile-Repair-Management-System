@@ -80,7 +80,10 @@ export const api = {
   }),
 
   // Enquiries
-  getEnquiries:   (today) => req('GET',    `/enquiries${today ? '?today=true' : ''}`),
+  getEnquiries:   (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return req('GET', `/enquiries${qs ? `?${qs}` : ''}`);
+  },
   createEnquiry:  (data)  => req('POST',   '/enquiries', data),
   deleteEnquiry:  (id)    => req('DELETE', `/enquiries/${id}`),
 

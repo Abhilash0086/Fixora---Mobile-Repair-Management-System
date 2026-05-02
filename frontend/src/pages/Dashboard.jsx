@@ -19,6 +19,8 @@ const STATS = [
 const EMPTY_ENQ = { name: '', contact_no: '', device: '', description: '' };
 
 export default function Dashboard() {
+  const todayStr = () => new Date().toISOString().slice(0, 10);
+
   const [summary,    setSummary]    = useState(null);
   const [enquiries,  setEnquiries]  = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -27,24 +29,34 @@ export default function Dashboard() {
   const [form,       setForm]       = useState(EMPTY_ENQ);
   const [saving,     setSaving]     = useState(false);
   const [deleting,   setDeleting]   = useState(null);
+  const [enqFrom,    setEnqFrom]    = useState(todayStr);
+  const [enqTo,      setEnqTo]      = useState(todayStr);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { gate, modal } = useGuestGate();
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadSummary(); }, []);
+  useEffect(() => { loadEnquiries(); }, [enqFrom, enqTo]);
 
-  async function load() {
+  async function loadSummary() {
     setLoading(true);
     try {
-      const [dash, enqs] = await Promise.all([
-        api.dashboard(),
-        api.getEnquiries(true),
-      ]);
+      const dash = await api.dashboard();
       setSummary(dash.summary);
-      setEnquiries(enqs);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadEnquiries() {
+    try {
+      const enqs = await api.getEnquiries({ from: enqFrom, to: enqTo });
+      setEnquiries(enqs);
+    } catch { /* silent */ }
+  }
+
+  async function load() {
+    await Promise.all([loadSummary(), loadEnquiries()]);
   }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -107,13 +119,39 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* ── Today's Enquiries ── */}
+      {/* ── Enquiries ── */}
       <div className="section-header">
         <div className="section-title">
-          Today's Enquiries
+          Enquiries
           <span className="section-count">{enquiries.length}</span>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            <input
+              type="date"
+              value={enqFrom}
+              max={enqTo}
+              onChange={e => setEnqFrom(e.target.value)}
+              style={{ fontSize: 12, padding: '3px 6px' }}
+            />
+            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>to</span>
+            <input
+              type="date"
+              value={enqTo}
+              min={enqFrom}
+              onChange={e => setEnqTo(e.target.value)}
+              style={{ fontSize: 12, padding: '3px 6px' }}
+            />
+            {(enqFrom !== todayStr() || enqTo !== todayStr()) && (
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, padding: '2px 8px' }}
+                onClick={() => { setEnqFrom(todayStr()); setEnqTo(todayStr()); }}
+              >
+                Today
+              </button>
+            )}
+          </div>
           {user?.role === 'admin' && (
             <button className="btn btn-primary btn-sm" onClick={() => navigate('/new')}>
               + New Job Card

@@ -96,19 +96,22 @@ function buildMessage(status, jobCard) {
     case 'Delivered':
       return (
         `🙏 Thank you for choosing *${shop}*!\n` +
-        `Your *${model}* (Job Card: *${id}*) has been delivered. Hope to see you again!`
+        `Your *${model}* (Job Card: *${id}*) has been delivered. Hope to see you again!` +
+        track
       );
 
     case 'Returned':
       return (
         `Your device *${model}* (Job Card: *${id}*) has been returned to you.\n` +
-        `Please contact us if you have any concerns.`
+        `Please contact us if you have any concerns.` +
+        track
       );
 
     case 'Delayed':
       return (
         `We're sorry — your *${model}* repair (Job Card: *${id}*) is taking longer than expected.\n` +
-        `Our team will reach out with an update shortly.`
+        `Our team will reach out with an update shortly.` +
+        track
       );
 
     default:
