@@ -1,4 +1,4 @@
-export function printJobCard(job) {
+export function printJobCard(job, preWin = null) {
   const fmt = v => v || '—';
   const fmtDate = str => str
     ? new Date(str).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -258,9 +258,19 @@ export function printJobCard(job) {
 </body>
 </html>`;
 
-  const win = window.open('', '_blank', 'width=800,height=900');
-  win.document.write(html);
-  win.document.close();
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+
+  if (preWin) {
+    preWin.onload = () => URL.revokeObjectURL(url);
+    preWin.location.href = url;
+  } else {
+    const win = window.open(url, '_blank', 'width=800,height=900');
+    if (!win) {
+      URL.revokeObjectURL(url);
+      alert('Popups are blocked. Please allow popups for this site to print job cards.');
+    }
+  }
 }
 
 function statusStyle(status) {

@@ -73,12 +73,18 @@ export default function AllJobCards() {
 
   async function handlePrint(e, job) {
     e.stopPropagation();
-    // Fetch full details (list view may be missing some fields)
+    // Open synchronously inside the click handler — keeps it within the user gesture
+    // so popup blockers don't interfere with the later window.open inside printJobCard
+    const win = window.open('', '_blank', 'width=800,height=900');
+    if (!win) {
+      toast('Allow popups for this site to print job cards.', 'error');
+      return;
+    }
     try {
       const full = await api.getJobCard(job.job_card_id);
-      printJobCard(full);
+      printJobCard(full, win);
     } catch {
-      printJobCard(job); // fallback to list data
+      printJobCard(job, win);
     }
   }
 

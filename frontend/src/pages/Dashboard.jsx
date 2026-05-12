@@ -125,27 +125,24 @@ export default function Dashboard() {
           Enquiries
           <span className="section-count">{enquiries.length}</span>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <div className="enq-header-controls">
+          <div className="enq-date-range">
             <input
               type="date"
               value={enqFrom}
               max={enqTo}
               onChange={e => setEnqFrom(e.target.value)}
-              style={{ fontSize: 12, padding: '3px 6px' }}
             />
-            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>to</span>
+            <span className="enq-date-sep">to</span>
             <input
               type="date"
               value={enqTo}
               min={enqFrom}
               onChange={e => setEnqTo(e.target.value)}
-              style={{ fontSize: 12, padding: '3px 6px' }}
             />
             {(enqFrom !== todayStr() || enqTo !== todayStr()) && (
               <button
                 className="btn btn-ghost btn-sm"
-                style={{ fontSize: 11, padding: '2px 8px' }}
                 onClick={() => { setEnqFrom(todayStr()); setEnqTo(todayStr()); }}
               >
                 Today

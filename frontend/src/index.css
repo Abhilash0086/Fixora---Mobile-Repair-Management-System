@@ -183,13 +183,43 @@ html, body, #root {
   font-weight: 500;
 }
 
+/* ── Date input calendar icon — visible in dark mode ────── */
+input[type="date"] { color-scheme: dark; }
+[data-theme="light"] input[type="date"] { color-scheme: light; }
+
 /* ── Section header (used in Dashboard) ────────────────── */
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
   margin-top: 8px;
+}
+
+/* ── Enquiry header date range controls ─────────────────── */
+.enq-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.enq-date-range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.enq-date-range input[type="date"] {
+  width: auto;
+  font-size: 12px;
+  padding: 3px 6px;
+}
+.enq-date-sep {
+  font-size: 12px;
+  color: var(--text-3);
+  flex-shrink: 0;
 }
 .section-title {
   font-family: var(--font-head);
@@ -1043,6 +1073,10 @@ select option { background: var(--bg-2); }
   .filter-row { flex-direction: column; }
   .filter-row select,
   .filter-row input[type="date"] { width: 100%; min-width: unset; }
+  .section-header { align-items: flex-start; }
+  .enq-header-controls { width: 100%; }
+  .enq-date-range { width: 100%; }
+  .enq-date-range input[type="date"] { flex: 1; min-width: 0; }
 }
 
 /* ═══════════════════════════════════════════════════════════
